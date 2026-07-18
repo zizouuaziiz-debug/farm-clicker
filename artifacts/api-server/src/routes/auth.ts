@@ -164,7 +164,6 @@ export function serializeUser(user: typeof usersTable.$inferSelect) {
     totalHarvests: user.totalHarvests,
     totalCoinsEarned: user.totalCoinsEarned,
     referralCode: user.referralCode,
-    usdtBalance: parseFloat(String(user.usdtBalance ?? "0")),
     isAdmin: user.isAdmin,
     isBanned: user.isBanned,
     createdAt: user.createdAt.toISOString(),

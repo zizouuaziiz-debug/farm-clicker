@@ -244,12 +244,7 @@ export const ENERGY_PER_PLANT = 1;
 export const ENERGY_REGEN_INTERVAL_MS = 3 * 60 * 1000;
 
 export const VIP_WALLET = process.env.VIP_WALLET_ADDRESS || "TBD_SET_VIP_WALLET_ADDRESS";
-
-// ── BEP20 Deposit System ──────────────────────────────────────────────────────
-export const BEP20_WALLET_ADDRESS =
-  process.env.BEP20_WALLET_ADDRESS || "0xd5be094ca8bb37464b587b172c5733a4f7971c26";
-export const BEP20_MIN_DEPOSIT_USDT = Number(process.env.BEP20_MIN_DEPOSIT_USDT) || 5;
-export const VIP_NETWORK = "TRC20 (USDT)";
+export const VIP_NETWORK = "BEP20 (BSC)";
 export const WITHDRAW_NETWORKS = ["TRC20", "ERC20", "BEP20"] as const;
 export type WithdrawNetwork = typeof WITHDRAW_NETWORKS[number];
 

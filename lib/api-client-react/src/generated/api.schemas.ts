@@ -5,6 +5,7 @@
  * Farm Clicker Telegram Mini App API
  * OpenAPI spec version: 0.1.0
  */
+
 export interface HealthStatus {
   status: string;
 }
@@ -41,7 +42,6 @@ export interface UserProfile {
   isAdmin?: boolean;
   isBanned?: boolean;
   createdAt: string;
-  usdtBalance?: number;
   /** @nullable */
   energyRegenAt?: string | null;
 }
@@ -52,87 +52,55 @@ export interface AuthResult {
 }
 
 export interface DashboardSummary {
+  user: UserProfile;
+  activePlots: number;
   readyToHarvest: number;
-  needsWater: number;
-  todayClaimed: boolean;
-  currentStreak: number;
-  level: number;
-  coins: number;
-  energy: number;
-  maxEnergy: number;
+  pendingWithdrawals: number;
 }
-
-export type FarmPlotState = typeof FarmPlotState[keyof typeof FarmPlotState];
-
-
-export const FarmPlotState = {
-  empty: 'empty',
-  planted: 'planted',
-  growing: 'growing',
-  needs_water: 'needs_water',
-  ready: 'ready',
-  withered: 'withered',
-  dead: 'dead',
-} as const;
 
 export interface FarmPlot {
   id: number;
   slot: number;
-  state: FarmPlotState;
-  /** @nullable */
-  cropType?: string | null;
-  /** @nullable */
-  plantedAt?: string | null;
-  /** @nullable */
-  readyAt?: string | null;
-  /** @nullable */
-  wateredAt?: string | null;
-  /** @nullable */
-  waterStage?: number | null;
-  /** @nullable */
-  growthPercent?: number | null;
+  cropType: string | null;
+  plantedAt: string | null;
+  readyAt: string | null;
+  wateredAt: string | null;
+  nextWaterAt: string | null;
+  harvestedAt: string | null;
+  witheredAt: string | null;
+  isReady: boolean;
+  needsWater: boolean;
+  isWithered: boolean;
+  growthProgress: number;
 }
-
-export type PlantInputCropType = typeof PlantInputCropType[keyof typeof PlantInputCropType];
-
-
-export const PlantInputCropType = {
-  wheat: 'wheat',
-  sunflower: 'sunflower',
-  tomato: 'tomato',
-  carrot: 'carrot',
-  potato: 'potato',
-  corn: 'corn',
-} as const;
 
 export interface PlantInput {
   slot: number;
-  cropType: PlantInputCropType;
+  cropType: string;
+  fromInventory?: boolean;
 }
 
 export interface HarvestResult {
-  cropType: string;
-  quantity: number;
-  coinsEarned: number;
-  xpEarned: number;
-  levelUp?: boolean;
+  coins: number;
+  xp: number;
   user: UserProfile;
 }
 
 export interface HarvestAllResult {
   harvested: number;
-  totalCoins: number;
-  totalXp: number;
+  coins: number;
+  xp: number;
   user: UserProfile;
 }
 
 export interface WaterAllResult {
   watered: number;
+  user: UserProfile;
 }
 
 export interface InventoryItem {
   id: number;
-  itemType: string;
+  cropType: string;
   quantity: number;
 }
 
@@ -142,10 +110,12 @@ export interface SeedInfo {
   emoji: string;
   buyCost: number;
   sellPrice: number;
-  growTime: number;
+  growTimeMs: number;
   waterNeeded: number;
   requiredLevel: number;
-  xpReward?: number;
+  xpReward: number;
+  coinsPerHarvest: number;
+  quantity: number;
 }
 
 export interface BuyInput {
@@ -154,106 +124,88 @@ export interface BuyInput {
 }
 
 export interface PurchaseResult {
-  cropType: string;
-  quantity: number;
-  totalCost: number;
-  user: UserProfile;
+  coins: number;
+  item: InventoryItem;
 }
 
 export interface SellInput {
-  itemType: string;
+  cropType: string;
   quantity: number;
 }
 
 export interface SaleResult {
-  totalCoins: number;
-  itemsSold: number;
-  user: UserProfile;
+  coins: number;
+  coinsEarned: number;
 }
 
 export interface LeaderboardEntry {
   rank: number;
   userId: number;
   username: string;
-  /** @nullable */
-  firstName?: string | null;
-  /** @nullable */
-  photoUrl?: string | null;
   coins: number;
   level: number;
-  totalHarvests: number;
   vipLevel: number;
 }
 
-export interface RewardItem {
-  coins: number;
-  xp: number;
-  energy?: number;
-  /** @nullable */
-  bonus?: string | null;
+export interface DailyRewardStatus {
+  canClaim: boolean;
+  currentDay: number;
+  nextClaimAt: string | null;
+  streak: number;
+  rewards: DailyRewardItem[];
 }
 
-export interface DailyRewardStatus {
+export interface DailyRewardItem {
   day: number;
-  claimed: boolean;
-  streak: number;
-  reward: RewardItem;
-  nextReward: RewardItem;
+  coins: number;
+  xp: number;
+  bonus?: string;
 }
 
 export interface DailyRewardClaim {
-  day: number;
-  streak: number;
   reward: RewardItem;
   user: UserProfile;
+  streak: number;
+}
+
+export interface RewardItem {
+  coins?: number;
+  xp?: number;
+  energy?: number;
+  bonus?: string;
 }
 
 export interface Mission {
   id: number;
+  missionKey: string;
   title: string;
   description: string;
-  missionType: string;
-  goal: number;
-  progress: number;
+  type: string;
+  targetValue: number;
+  currentValue: number;
+  rewardCoins: number;
+  rewardXp: number;
   completed: boolean;
   claimed: boolean;
-  reward: RewardItem;
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  emoji: string;
-  category: string;
-  unlocked: boolean;
-  /** @nullable */
-  unlockedAt?: string | null;
-  progress: number;
-  goal: number;
-}
-
-export interface PlayerStatsCropsHarvestedByType {
-  wheat: number;
-  sunflower: number;
-  tomato: number;
-  carrot: number;
-  potato: number;
-  corn: number;
 }
 
 export interface PlayerStats {
   totalHarvests: number;
-  totalWatered: number;
   totalCoinsEarned: number;
-  totalCoinsSent: number;
   totalXpEarned: number;
-  cropsHarvestedByType: PlayerStatsCropsHarvestedByType;
-  currentStreak: number;
+  totalWatered: number;
   longestStreak: number;
-  daysSinceJoined: number;
-  level: number;
-  user: UserProfile;
+  currentStreak: number;
+  cropsHarvestedByType: PlayerStatsCropsHarvestedByType;
+}
+
+export interface PlayerStatsCropsHarvestedByType {
+  wheat?: number;
+  tomato?: number;
+  potato?: number;
+  sunflower?: number;
+  carrot?: number;
+  corn?: number;
 }
 
 export interface VipPlan {
@@ -280,6 +232,12 @@ export interface VipStatus {
   active: boolean;
 }
 
+export interface VipPurchaseInput {
+  tier: number;
+  txHash: string;
+  walletSent: string;
+}
+
 export interface VipPurchase {
   id: number;
   tier: number;
@@ -293,12 +251,6 @@ export interface VipPurchase {
   createdAt: string;
   /** @nullable */
   approvedAt?: string | null;
-}
-
-export interface VipPurchaseInput {
-  tier: number;
-  txHash: string;
-  walletSent: string;
 }
 
 export interface VipPurchaseSubmitResult {
@@ -327,6 +279,7 @@ export interface Withdrawal {
   coinsAmount: number;
   usdtAmount: number;
   usdtWallet: string;
+  network: string;
   status: string;
   /** @nullable */
   txHash?: string | null;
@@ -341,10 +294,80 @@ export interface WithdrawalResult {
   id: number;
   coinsAmount: number;
   usdtAmount: number;
-  usdtWallet: string;
   status: string;
   message: string;
 }
+
+// ── Deposit types ─────────────────────────────────────────────────────────────
+
+export interface DepositWalletInfo {
+  walletAddress: string;
+  network: string;
+  contractAddress: string;
+  coinsPerUsdt: number;
+}
+
+export interface DepositInput {
+  txHash: string;
+  amountUsdt: number;
+}
+
+export interface DepositResult {
+  id: number;
+  status: string;
+  message: string;
+  /** @nullable */
+  amountUsdt?: number | null;
+  /** @nullable */
+  coinsCredit?: number | null;
+  /** @nullable */
+  failReason?: string | null;
+}
+
+export interface Deposit {
+  id: number;
+  txHash: string;
+  amountUsdt: number;
+  coinsCredit: number;
+  status: string;
+  /** @nullable */
+  failReason?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+}
+
+// ── Admin deposit types ───────────────────────────────────────────────────────
+
+export interface AdminDeposit {
+  id: number;
+  userId: number;
+  username: string;
+  telegramId: string;
+  txHash: string;
+  amountUsdt: number;
+  coinsCredit: number;
+  status: string;
+  /** @nullable */
+  failReason?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+}
+
+export type GetAdminDepositsParams = {
+  status?: GetAdminDepositsStatus;
+};
+
+export type GetAdminDepositsStatus = typeof GetAdminDepositsStatus[keyof typeof GetAdminDepositsStatus];
+
+export const GetAdminDepositsStatus = {
+  pending: 'pending',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+// ── Admin types ───────────────────────────────────────────────────────────────
 
 export interface AdminStats {
   totalUsers: number;
@@ -480,74 +503,8 @@ export interface ReferralInfo {
   referralBonusCoinsEarned: number;
 }
 
-export interface DepositWallet {
-  walletAddress: string;
-  network: string;
-  minDepositUsdt: number;
-  contractAddress: string;
-}
-
-export interface DepositSubmitInput {
-  txHash: string;
-  amountUsdt: number;
-}
-
-export interface DepositItem {
-  id: number;
-  txHash: string;
-  amountUsdt: number;
-  status: string;
-  /** @nullable */
-  failReason?: string | null;
-  network: string;
-  /** @nullable */
-  confirmations?: number | null;
-  /** @nullable */
-  verifiedAt?: string | null;
-  createdAt: string;
-}
-
-export interface DepositResult {
-  id: number;
-  status: string;
-  amountUsdt: number;
-  message: string;
-  usdtBalance: number;
-}
-
-export interface AdminDeposit {
-  id: number;
-  userId: number;
-  username: string;
-  telegramId: string;
-  txHash: string;
-  amountUsdt: number;
-  status: string;
-  /** @nullable */
-  failReason?: string | null;
-  network: string;
-  /** @nullable */
-  confirmations?: number | null;
-  /** @nullable */
-  verifiedAt?: string | null;
-  createdAt: string;
-}
-
-export interface AdminDepositsPage {
-  deposits: AdminDeposit[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
 export type GetLeaderboardParams = {
 limit?: number;
-};
-
-export type GetAdminDepositsParams = {
-status?: string;
-limit?: number;
-offset?: number;
 };
 
 export type GetAdminUsersParams = {
@@ -582,4 +539,3 @@ export const GetAdminVipPurchasesStatus = {
   approved: 'approved',
   rejected: 'rejected',
 } as const;
-

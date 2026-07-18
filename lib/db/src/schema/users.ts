@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean, index, unique, type AnyPgColumn, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, index, unique, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable(
   "users",
@@ -44,7 +44,6 @@ export const usersTable = pgTable(
     cropsHarvestedSunflower: integer("crops_harvested_sunflower").notNull().default(0),
     cropsHarvestedCarrot: integer("crops_harvested_carrot").notNull().default(0),
     cropsHarvestedCorn: integer("crops_harvested_corn").notNull().default(0),
-    usdtBalance: numeric("usdt_balance", { precision: 12, scale: 2 }).notNull().default("0"),
     isAdmin: boolean("is_admin").notNull().default(false),
     isBanned: boolean("is_banned").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

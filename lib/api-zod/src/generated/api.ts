@@ -46,7 +46,6 @@ export const AuthTelegramResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -75,7 +74,6 @@ export const GetMeResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 
@@ -103,7 +101,6 @@ export const RefillEnergyResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 
@@ -194,7 +191,6 @@ export const HarvestPlotResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -247,7 +243,6 @@ export const HarvestAllResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -321,7 +316,6 @@ export const BuySeedsResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -358,7 +352,6 @@ export const SellItemsResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -441,7 +434,6 @@ export const ClaimDailyRewardResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -496,7 +488,6 @@ export const ClaimMissionRewardResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 
@@ -559,7 +550,6 @@ export const GetPlayerStatsResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })
@@ -627,95 +617,6 @@ export const SubmitVipPurchaseResponse = zod.object({
   "priceUsdt": zod.number(),
   "status": zod.string(),
   "message": zod.string()
-})
-
-
-/**
- * @summary Get BEP20 deposit wallet address and info
- */
-export const GetDepositWalletResponse = zod.object({
-  "walletAddress": zod.string(),
-  "network": zod.string(),
-  "minDepositUsdt": zod.number(),
-  "contractAddress": zod.string()
-})
-
-
-/**
- * @summary Get current user's deposit history
- */
-export const GetDepositHistoryResponseItem = zod.object({
-  "id": zod.number(),
-  "txHash": zod.string(),
-  "amountUsdt": zod.number(),
-  "status": zod.string(),
-  "failReason": zod.string().nullish(),
-  "network": zod.string(),
-  "confirmations": zod.number().nullish(),
-  "verifiedAt": zod.string().nullish(),
-  "createdAt": zod.string()
-})
-export const GetDepositHistoryResponse = zod.array(GetDepositHistoryResponseItem)
-
-
-/**
- * @summary Submit a BEP20 USDT deposit for auto-verification
- */
-export const SubmitDepositBody = zod.object({
-  "txHash": zod.string(),
-  "amountUsdt": zod.number()
-})
-
-export const SubmitDepositResponse = zod.object({
-  "id": zod.number(),
-  "status": zod.string(),
-  "amountUsdt": zod.number(),
-  "message": zod.string(),
-  "usdtBalance": zod.number()
-})
-
-
-/**
- * @summary Get all deposits (admin)
- */
-export const GetAdminDepositsQueryParams = zod.object({
-  "status": zod.coerce.string().optional(),
-  "limit": zod.coerce.number().optional(),
-  "offset": zod.coerce.number().optional()
-})
-
-export const GetAdminDepositsResponse = zod.object({
-  "deposits": zod.array(zod.object({
-  "id": zod.number(),
-  "userId": zod.number(),
-  "username": zod.string(),
-  "telegramId": zod.string(),
-  "txHash": zod.string(),
-  "amountUsdt": zod.number(),
-  "status": zod.string(),
-  "failReason": zod.string().nullish(),
-  "network": zod.string(),
-  "confirmations": zod.number().nullish(),
-  "verifiedAt": zod.string().nullish(),
-  "createdAt": zod.string()
-})),
-  "total": zod.number(),
-  "limit": zod.number(),
-  "offset": zod.number()
-})
-
-
-/**
- * @summary Re-verify a deposit transaction (admin)
- */
-export const ReverifyDepositParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const ReverifyDepositResponse = zod.object({
-  "success": zod.boolean(),
-  "id": zod.number(),
-  "status": zod.string()
 })
 
 
@@ -814,7 +715,6 @@ export const GetAdminUsersResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })),
   "total": zod.number(),
@@ -856,7 +756,6 @@ export const UpdateAdminUserResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 
@@ -1050,7 +949,6 @@ export const ClaimAdRewardResponse = zod.object({
   "isAdmin": zod.boolean().optional(),
   "isBanned": zod.boolean().optional(),
   "createdAt": zod.string(),
-  "usdtBalance": zod.number().optional(),
   "energyRegenAt": zod.string().nullish()
 })
 })

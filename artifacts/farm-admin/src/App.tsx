@@ -10,8 +10,8 @@ const Login = lazy(() => import("@/pages/login"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Users = lazy(() => import("@/pages/users"));
 const Withdrawals = lazy(() => import("@/pages/withdrawals"));
-const Deposits = lazy(() => import("@/pages/deposits"));
 const VipPurchases = lazy(() => import("@/pages/vip-purchases"));
+const Deposits = lazy(() => import("@/pages/deposits"));
 const GameManagement = lazy(() => import("@/pages/game-management"));
 const Logs = lazy(() => import("@/pages/logs"));
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -33,8 +33,8 @@ const NAV_ITEMS = [
   { path: "/", label: "Dashboard", emoji: "📊", exact: true },
   { path: "/users", label: "Users", emoji: "👥", exact: false },
   { path: "/withdrawals", label: "Withdrawals", emoji: "💸", exact: false },
-  { path: "/deposits", label: "Deposits", emoji: "💳", exact: false },
   { path: "/vip-purchases", label: "VIP Requests", emoji: "💎", exact: false },
+  { path: "/deposits", label: "Deposits", emoji: "💰", exact: false },
   { path: "/game-management", label: "Game Economy", emoji: "🎮", exact: false },
   { path: "/logs", label: "Logs", emoji: "📋", exact: false },
 ];
@@ -101,8 +101,8 @@ function AdminLayout({ onLogout }: { onLogout: () => void }) {
             <Route path="/" component={Dashboard} />
             <Route path="/users" component={Users} />
             <Route path="/withdrawals" component={Withdrawals} />
-            <Route path="/deposits" component={Deposits} />
             <Route path="/vip-purchases" component={VipPurchases} />
+            <Route path="/deposits" component={Deposits} />
             <Route path="/game-management" component={GameManagement} />
             <Route path="/logs" component={Logs} />
             <Route component={NotFound} />

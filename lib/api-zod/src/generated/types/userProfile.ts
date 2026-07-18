@@ -31,7 +31,6 @@ export interface UserProfile {
   isAdmin?: boolean;
   isBanned?: boolean;
   createdAt: string;
-  usdtBalance?: number;
   /** @nullable */
   energyRegenAt?: string | null;
 }

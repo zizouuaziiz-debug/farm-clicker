@@ -1,202 +1,327 @@
 import { useState } from "react";
-import {
-  useGetDepositWallet,
-  useGetDepositHistory,
-  useSubmitDeposit,
-  getGetDepositHistoryQueryKey,
-} from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import { Copy, Loader2, CheckCircle2, AlertCircle, ArrowLeft, Clock } from "lucide-react";
+import { GameCard, GameButton } from "@/components/ui/game-ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Loader2, Copy, CheckCircle2, AlertCircle, Clock, Wallet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  useGetDepositWallet,
+  useSubmitDeposit,
+  useGetDepositHistory,
+  getGetDepositHistoryQueryKey,
+} from "@/api-client";
+import { useQueryClient } from "@tanstack/react-query";
 
-function statusVariant(status: string): "default" | "destructive" | "secondary" {
-  if (status === "completed") return "default";
-  if (status === "failed") return "destructive";
-  return "secondary";
-}
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  completed: "bg-green-100 text-green-700 border-green-200",
+  failed: "bg-red-100 text-red-700 border-red-200",
+};
 
-function statusLabel(status: string) {
-  if (status === "completed") return "✅ Completed";
-  if (status === "failed") return "❌ Failed";
-  return "⏳ Pending";
-}
+const STATUS_ICONS: Record<string, React.ReactNode> = {
+  pending: <Clock size={13} />,
+  completed: <CheckCircle2 size={13} />,
+  failed: <AlertCircle size={13} />,
+};
 
 export default function Deposit() {
   const queryClient = useQueryClient();
-  const { data: wallet, isLoading: loadingWallet } = useGetDepositWallet();
-  const { data: history = [], isLoading: loadingHistory } = useGetDepositHistory();
+  const { data: walletInfo, isLoading: loadingWallet } = useGetDepositWallet();
+  const { data: history = [], isLoading: loadingHistory } = useGetDepositHistory({
+    query: { queryKey: getGetDepositHistoryQueryKey() },
+  });
   const submitDeposit = useSubmitDeposit();
 
   const [txHash, setTxHash] = useState("");
   const [amountUsdt, setAmountUsdt] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [lastResult, setLastResult] = useState<{ amountUsdt: number; usdtBalance: number } | null>(null);
+  const [view, setView] = useState<"form" | "history">("form");
+  const [lastResult, setLastResult] = useState<{
+    status: string;
+    message: string;
+    coinsCredit?: number;
+    failReason?: string;
+  } | null>(null);
 
   const copyWallet = () => {
-    if (!wallet?.walletAddress) return;
-    navigator.clipboard.writeText(wallet.walletAddress);
-    toast.success("Wallet address copied");
+    if (!walletInfo?.walletAddress) return;
+    navigator.clipboard.writeText(walletInfo.walletAddress);
+    toast.success("Wallet address copied!");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const amount = parseFloat(amountUsdt);
-    if (!txHash.trim()) { toast.error("Please enter the transaction hash"); return; }
-    if (!txHash.trim().startsWith("0x") || txHash.trim().length !== 66) {
-      toast.error("Invalid transaction hash — must start with 0x and be 66 characters");
+    if (!txHash.trim() || isNaN(amount) || amount <= 0) {
+      toast.error("Please fill in all fields correctly.");
       return;
     }
-    if (isNaN(amount) || amount <= 0) { toast.error("Please enter a valid amount"); return; }
-    if (wallet && amount < wallet.minDepositUsdt) {
-      toast.error(`Minimum deposit is ${wallet.minDepositUsdt} USDT`); return;
+    if (!/^0x[a-fA-F0-9]{64}$/.test(txHash.trim())) {
+      toast.error("Transaction hash must start with 0x followed by 64 hex characters.");
+      return;
     }
 
-    submitDeposit.mutate(
-      { data: { txHash: txHash.trim(), amountUsdt: amount } },
-      {
-        onSuccess: (data) => {
-          setSubmitted(true);
-          setLastResult({ amountUsdt: data.amountUsdt, usdtBalance: data.usdtBalance });
-          queryClient.invalidateQueries({ queryKey: getGetDepositHistoryQueryKey() });
-          toast.success(`${data.amountUsdt.toFixed(2)} USDT credited!`);
-        },
-        onError: (err: any) => {
-          const msg = err?.response?.data?.error || "Verification failed. Check your tx hash and try again.";
-          toast.error(msg);
-        },
-      },
-    );
+    try {
+      const result = await submitDeposit.mutateAsync({
+        data: { txHash: txHash.trim(), amountUsdt: amount },
+      });
+      setLastResult({
+        status: result.status,
+        message: result.message ?? "Deposit processed.",
+        coinsCredit: result.coinsCredit,
+      });
+      queryClient.invalidateQueries({ queryKey: getGetDepositHistoryQueryKey() });
+      if (result.status === "completed") {
+        setTxHash("");
+        setAmountUsdt("");
+      }
+    } catch (err: unknown) {
+      const errorData = (err as { data?: { failReason?: string; error?: string } })?.data;
+      const reason = errorData?.failReason ?? errorData?.error ?? "Verification failed.";
+      setLastResult({ status: "failed", message: reason });
+    }
   };
 
-  if (loadingWallet) {
-    return (
-      <div className="p-8 flex justify-center">
-        <Loader2 className="animate-spin" size={32} />
-      </div>
-    );
-  }
+  const walletAddress = walletInfo?.walletAddress ?? "";
+  const qrUrl = walletAddress
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(walletAddress)}&margin=2`
+    : "";
 
   return (
-    <div className="p-4 space-y-4 pb-24 max-w-lg mx-auto">
+    <div className="p-4 space-y-4 max-w-md mx-auto pb-24">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Wallet size={28} />
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <GameCard className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-emerald-700">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">💰</span>
             <div>
-              <h2 className="font-bold text-lg leading-none">USDT Deposit</h2>
-              <p className="text-sm opacity-90">BEP20 · BNB Smart Chain</p>
+              <h1 className="font-display font-bold text-xl leading-none">Deposit USDT</h1>
+              <p className="text-sm opacity-90 mt-0.5">
+                BEP20 (Binance Smart Chain) · Auto-verified
+              </p>
             </div>
           </div>
-          <p className="text-xs opacity-80">
-            Send USDT (BEP20) to the address below, then submit your transaction hash for automatic verification.
-          </p>
-        </div>
+          {walletInfo && (
+            <p className="mt-2 text-sm opacity-80">
+              1 USDT = {walletInfo.coinsPerUsdt?.toLocaleString() ?? "?"} coins
+            </p>
+          )}
+        </GameCard>
       </motion.div>
 
-      {/* Wallet & QR */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="rounded-2xl border bg-card p-4 space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deposit Wallet</h3>
-          <div className="flex justify-center">
-            <div className="bg-white p-3 rounded-2xl border">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${encodeURIComponent(wallet?.walletAddress || "")}`}
-                alt="QR Code"
-                className="w-36 h-36 rounded"
-              />
-            </div>
-          </div>
-          <div className="bg-muted/60 rounded-xl p-3 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-semibold">BEP20 Address</span>
-              <button onClick={copyWallet} className="flex items-center gap-1 text-xs text-primary font-semibold hover:opacity-70 transition-opacity">
-                <Copy size={12} /> Copy
-              </button>
-            </div>
-            <code className="text-[11px] break-all text-foreground leading-relaxed">{wallet?.walletAddress}</code>
-          </div>
-          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-200">
-            <AlertCircle size={14} className="shrink-0 mt-0.5" />
-            <span>Send only <strong>USDT BEP20</strong> on BNB Smart Chain. Min: <strong>${wallet?.minDepositUsdt} USDT</strong></span>
-          </div>
-        </div>
-      </motion.div>
+      {/* Tab switcher */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setView("form")}
+          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            view === "form"
+              ? "bg-primary text-white"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          }`}
+        >
+          Deposit
+        </button>
+        <button
+          onClick={() => setView("history")}
+          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            view === "history"
+              ? "bg-primary text-white"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          }`}
+        >
+          History {history.length > 0 && `(${history.length})`}
+        </button>
+      </div>
 
-      {/* Submit Form */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="rounded-2xl border bg-card p-4 space-y-4">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Submit Deposit</h3>
-          <AnimatePresence mode="wait">
-            {submitted && lastResult ? (
-              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center py-4 space-y-3">
-                <CheckCircle2 className="mx-auto text-emerald-500" size={44} />
+      <AnimatePresence mode="wait">
+        {view === "form" ? (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 12 }}
+            className="space-y-4"
+          >
+            {/* Result banner */}
+            {lastResult && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`rounded-2xl border p-4 flex items-start gap-3 ${
+                  lastResult.status === "completed"
+                    ? "bg-green-50 border-green-200"
+                    : lastResult.status === "pending"
+                      ? "bg-yellow-50 border-yellow-200"
+                      : "bg-red-50 border-red-200"
+                }`}
+              >
+                {lastResult.status === "completed" ? (
+                  <CheckCircle2 className="text-green-600 shrink-0 mt-0.5" size={20} />
+                ) : lastResult.status === "pending" ? (
+                  <Clock className="text-yellow-600 shrink-0 mt-0.5" size={20} />
+                ) : (
+                  <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+                )}
                 <div>
-                  <p className="font-bold text-lg">Deposit Verified!</p>
-                  <p className="text-muted-foreground text-sm"><strong className="text-foreground">${lastResult.amountUsdt.toFixed(2)} USDT</strong> added to your balance.</p>
-                  <p className="text-xs text-muted-foreground mt-1">New balance: <strong>${lastResult.usdtBalance.toFixed(2)} USDT</strong></p>
+                  <p className="font-semibold text-sm">
+                    {lastResult.status === "completed"
+                      ? "Deposit Verified! ✅"
+                      : lastResult.status === "pending"
+                        ? "Pending Review"
+                        : "Verification Failed"}
+                  </p>
+                  <p className="text-xs mt-0.5 opacity-80">{lastResult.message}</p>
+                  {lastResult.coinsCredit && lastResult.coinsCredit > 0 && (
+                    <p className="text-xs font-bold text-green-700 mt-1">
+                      +{lastResult.coinsCredit.toLocaleString()} coins added!
+                    </p>
+                  )}
                 </div>
-                <Button variant="outline" onClick={() => { setTxHash(""); setAmountUsdt(""); setSubmitted(false); setLastResult(null); }} className="w-full">
-                  Submit Another
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div key="form" className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="txHash">Transaction Hash (TxID)</Label>
-                  <Input id="txHash" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x..." className="font-mono text-sm" />
-                  <p className="text-xs text-muted-foreground">Find this in your wallet or on BscScan</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="amount">Amount Sent (USDT)</Label>
-                  <Input id="amount" type="number" min={wallet?.minDepositUsdt ?? 5} step="0.01" value={amountUsdt} onChange={(e) => setAmountUsdt(e.target.value)} placeholder={`Min ${wallet?.minDepositUsdt ?? 5} USDT`} />
-                </div>
-                <Button className="w-full" onClick={handleSubmit} disabled={submitDeposit.isPending}>
-                  {submitDeposit.isPending ? <><Loader2 className="animate-spin mr-2" size={16} />Verifying on BscScan…</> : "Verify & Credit Balance"}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">Verification is automatic — balance credited instantly on success.</p>
+                <button
+                  className="ml-auto text-gray-400 hover:text-gray-600"
+                  onClick={() => setLastResult(null)}
+                >
+                  ×
+                </button>
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
 
-      {/* History */}
-      {(loadingHistory || history.length > 0) && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="rounded-2xl border bg-card p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deposit History</h3>
-            {loadingHistory ? (
-              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-muted-foreground" size={20} /></div>
-            ) : (
-              <div className="space-y-2">
-                {history.map((d) => (
-                  <div key={d.id} className="flex items-start justify-between gap-2 p-3 bg-muted/50 rounded-xl">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant={statusVariant(d.status)} className="text-[10px] h-5">{statusLabel(d.status)}</Badge>
-                        <span className="font-bold text-sm">${Number(d.amountUsdt).toFixed(2)}</span>
-                      </div>
-                      <code className="text-[10px] text-muted-foreground break-all">{d.txHash.slice(0, 18)}…{d.txHash.slice(-6)}</code>
-                      {d.failReason && <p className="text-[10px] text-destructive mt-1">{d.failReason}</p>}
+            {/* Wallet address card */}
+            {loadingWallet ? (
+              <div className="h-32 bg-muted animate-pulse rounded-2xl" />
+            ) : walletAddress ? (
+              <GameCard className="space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Send USDT (BEP20) to this address
+                </p>
+                <div className="flex gap-4 items-center">
+                  {qrUrl && (
+                    <img
+                      src={qrUrl}
+                      alt="Wallet QR code"
+                      className="w-[90px] h-[90px] rounded-xl border border-border shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <code className="text-[11px] break-all text-gray-700 leading-relaxed">
+                        {walletAddress}
+                      </code>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
-                      {d.confirmations != null && (
-                        <p className="text-[10px] text-muted-foreground flex items-center justify-end gap-1 mt-0.5"><Clock size={10} />{d.confirmations} conf.</p>
-                      )}
-                    </div>
+                    <button
+                      onClick={copyWallet}
+                      className="mt-2 flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+                    >
+                      <Copy size={13} />
+                      Copy address
+                    </button>
                   </div>
-                ))}
-              </div>
+                </div>
+                <div className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-xl p-2">
+                  ⚠️ Only send USDT on the <strong>Binance Smart Chain (BEP20)</strong> network.
+                  Sending on TRC20 or ERC20 will result in lost funds.
+                </div>
+              </GameCard>
+            ) : (
+              <GameCard>
+                <p className="text-sm text-muted-foreground text-center">
+                  Deposit wallet not configured yet. Contact support.
+                </p>
+              </GameCard>
             )}
-          </div>
-        </motion.div>
-      )}
+
+            {/* Form */}
+            <GameCard className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="amountUsdt">Amount Sent (USDT)</Label>
+                <Input
+                  id="amountUsdt"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="e.g. 10.00"
+                  value={amountUsdt}
+                  onChange={(e) => setAmountUsdt(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="txHash">Transaction Hash (TxID)</Label>
+                <Input
+                  id="txHash"
+                  placeholder="0x..."
+                  value={txHash}
+                  onChange={(e) => setTxHash(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Find this on BscScan after your transfer completes.
+                </p>
+              </div>
+
+              <GameButton
+                className="w-full"
+                onClick={handleSubmit}
+                disabled={submitDeposit.isPending || !walletAddress}
+              >
+                {submitDeposit.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={16} />
+                    Verifying on-chain…
+                  </span>
+                ) : (
+                  "Verify & Claim Coins"
+                )}
+              </GameButton>
+            </GameCard>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="history"
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            className="space-y-3"
+          >
+            {loadingHistory ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-20 bg-muted animate-pulse rounded-2xl" />
+              ))
+            ) : history.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p className="text-4xl mb-2">📭</p>
+                <p className="text-sm">No deposits yet</p>
+              </div>
+            ) : (
+              history.map((d) => (
+                <GameCard key={d.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm">{d.amountUsdt} USDT</span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[d.status] ?? "bg-gray-100 text-gray-700"}`}
+                    >
+                      {STATUS_ICONS[d.status]}
+                      {d.status}
+                    </span>
+                  </div>
+                  {d.coinsCredit > 0 && (
+                    <p className="text-xs font-semibold text-green-600">
+                      +{d.coinsCredit.toLocaleString()} coins
+                    </p>
+                  )}
+                  {d.failReason && (
+                    <p className="text-xs text-red-600">{d.failReason}</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground font-mono break-all">
+                    {d.txHash}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(d.createdAt).toLocaleString()}
+                  </p>
+                </GameCard>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

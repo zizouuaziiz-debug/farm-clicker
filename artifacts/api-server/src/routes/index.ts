@@ -19,7 +19,7 @@ import adminRouter from "./admin.js";
 import adminAuthRouter from "./admin-auth.js";
 import adsRouter from "./ads.js";
 import referralsRouter from "./referrals.js";
-import depositRouter from "./deposit.js";
+import depositsRouter from "./deposits.js";
 
 const router = Router();
 
@@ -43,8 +43,8 @@ router.use("/daily", writeLimiter, dailyRouter);
 router.use("/missions", missionsRouter);
 router.use("/achievements", achievementsRouter);
 router.use("/vip", vipRouter);
-router.use("/deposit", depositRouter);
 router.use("/withdraw", withdrawRouter);
+router.use("/deposits", depositsRouter);
 router.use("/ads", writeLimiter, adsRouter);
 router.use("/referrals", referralsRouter);
 

@@ -2,140 +2,149 @@ import { useState } from "react";
 import {
   useGetAdminDeposits,
   useReverifyDeposit,
-  getGetAdminDepositsQueryKey,
+  type GetAdminDepositsStatus,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, ExternalLink } from "lucide-react";
 
-const STATUS_OPTIONS = ["all", "pending", "completed", "failed"] as const;
-type StatusFilter = (typeof STATUS_OPTIONS)[number];
-
-function statusBadge(status: string) {
-  if (status === "completed") return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">✅ Completed</span>;
-  if (status === "failed") return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">❌ Failed</span>;
-  return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">⏳ Pending</span>;
-}
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700",
+  completed: "bg-green-100 text-green-700",
+  failed: "bg-red-100 text-red-700",
+};
 
 export default function Deposits() {
-  const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [page, setPage] = useState(0);
-  const limit = 20;
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
 
-  const queryParams = {
-    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-    limit,
-    offset: page * limit,
-  };
-
-  const { data, isLoading, error } = useGetAdminDeposits(queryParams);
+  const { data: deposits, isLoading, refetch } = useGetAdminDeposits({
+    status: statusFilter as GetAdminDepositsStatus,
+  });
   const reverify = useReverifyDeposit();
 
-  const handleReverify = (id: number) => {
-    reverify.mutate(
-      { id },
-      {
-        onSuccess: (result: any) => {
-          if (result.success) {
-            toast.success(`Deposit #${id} verified — $${result.amountUsdt?.toFixed(2) ?? ""} USDT credited`);
-          } else {
-            toast.error(`Re-verification failed: ${result.error || "Unknown"}`);
-          }
-          queryClient.invalidateQueries({ queryKey: getGetAdminDepositsQueryKey({}) });
-        },
-        onError: () => toast.error("Re-verification request failed"),
-      },
-    );
-  };
+  async function handleReverify(id: number) {
+    try {
+      const result = await reverify.mutateAsync({ id });
+      if (result.success) {
+        toast.success(
+          result.status === "completed"
+            ? `Deposit #${id} verified and ${(result as unknown as { coinsCredit?: number }).coinsCredit?.toLocaleString() ?? "?"} coins credited`
+            : "Already completed",
+        );
+      } else {
+        toast.error((result as unknown as { failReason?: string }).failReason ?? "Verification failed");
+      }
+      refetch();
+    } catch {
+      toast.error("Re-verification request failed");
+    }
+  }
 
-  const deposits = data?.deposits ?? [];
-  const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / limit);
+  const list = deposits ?? [];
 
   return (
-    <div className="p-6 space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">💳 Deposits</h1>
-        <p className="text-sm text-gray-500 mt-1">BEP20 USDT deposits — {total} total</p>
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Deposits</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            BEP20 USDT · Auto-verified on-chain
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {(["pending", "completed", "failed"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                statusFilter === s
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {STATUS_OPTIONS.map((s) => (
-          <button key={s} onClick={() => { setStatusFilter(s); setPage(0); }}
-            className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-colors ${statusFilter === s ? "bg-green-600 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-            {s}
-          </button>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      ) : list.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-4xl mb-2">📭</p>
+          <p>No {statusFilter} deposits</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {list.map((d) => (
+            <div
+              key={d.id}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  {/* User + status */}
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="font-semibold text-gray-900">{d.username || "—"}</span>
+                    <span className="text-xs text-gray-400">@{d.telegramId}</span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        STATUS_COLORS[d.status] ?? "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {d.status}
+                    </span>
+                  </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-16"><Loader2 className="animate-spin text-green-600" size={28} /></div>
-        ) : error ? (
-          <div className="py-16 text-center text-red-500 text-sm">Failed to load deposits</div>
-        ) : deposits.length === 0 ? (
-          <div className="py-16 text-center text-gray-400 text-sm">No deposits found</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  {["#", "User", "Amount", "Status", "Tx Hash", "Conf.", "Date", "Actions"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {deposits.map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs">{d.id}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">@{d.username}</div>
-                      <div className="text-xs text-gray-400 font-mono">{d.telegramId}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-bold">${Number(d.amountUsdt).toFixed(2)}</span>
-                      <span className="text-xs text-gray-400 ml-1">USDT</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {statusBadge(d.status)}
-                      {d.failReason && <div className="text-xs text-red-500 mt-1 max-w-[160px] truncate" title={d.failReason}>{d.failReason}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <code className="text-xs text-gray-600">{d.txHash.slice(0, 8)}…{d.txHash.slice(-6)}</code>
-                        <a href={`https://bscscan.com/tx/${d.txHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700"><ExternalLink size={11} /></a>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{d.confirmations != null ? d.confirmations : "—"}</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{new Date(d.createdAt).toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      {d.status !== "completed" && (
-                        <button onClick={() => handleReverify(d.id)} disabled={reverify.isPending}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50">
-                          <RefreshCw size={11} className={reverify.isPending ? "animate-spin" : ""} />
-                          Re-verify
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                  {/* Amount */}
+                  <div className="flex items-center gap-4 text-sm text-gray-700 mb-1 flex-wrap">
+                    <span className="font-bold text-green-700">
+                      {d.amountUsdt} USDT
+                    </span>
+                    {d.coinsCredit > 0 && (
+                      <span className="text-blue-600 font-medium">
+                        → {d.coinsCredit.toLocaleString()} coins
+                      </span>
+                    )}
+                  </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">Showing {page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total}</span>
-          <div className="flex gap-2">
-            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">← Prev</button>
-            <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">Next →</button>
-          </div>
+                  {/* TxHash */}
+                  <div className="font-mono text-[11px] text-gray-500 break-all mb-1">
+                    <span className="text-gray-400 mr-1">TxHash:</span>
+                    {d.txHash}
+                  </div>
+
+                  {/* Fail reason */}
+                  {d.failReason && (
+                    <p className="text-xs text-red-600 mt-1">{d.failReason}</p>
+                  )}
+
+                  {/* Timestamps */}
+                  <div className="text-xs text-gray-400 mt-1 flex gap-3 flex-wrap">
+                    <span>Submitted: {new Date(d.createdAt).toLocaleString()}</span>
+                    {d.verifiedAt && (
+                      <span>Verified: {new Date(d.verifiedAt).toLocaleString()}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Re-verify button */}
+                <div className="shrink-0">
+                  <button
+                    onClick={() => handleReverify(d.id)}
+                    disabled={reverify.isPending}
+                    className="py-1.5 px-3 text-xs font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {reverify.isPending ? "…" : "🔄 Re-verify"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
