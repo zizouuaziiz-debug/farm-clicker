@@ -8,6 +8,8 @@ import { requirePermission } from "../middlewares/requirePermission.js";
 import { validateBody } from "../middlewares/validateBody.js";
 import { serializeUser } from "./auth.js";
 import { parsePagination } from "../lib/pagination.js";
+import { verifyUsdtDeposit } from "../lib/bscscan.js";
+import { BEP20_WALLET_ADDRESS, BEP20_MIN_DEPOSIT_USDT } from "../lib/game-config.js";
 
 const patchUserSchema = z.object({
   isBanned: z.boolean().optional(),
@@ -31,8 +33,7 @@ const rejectSchema = z.object({
 const approveVipSchema = z.object({
   adminNotes: z.string().optional(),
 });
-import { VIP_TIER_NAMES, VIP_TIER_EMOJIS, getLevelForXp, type CropConfig, type VipConfig, BEP20_WALLET_ADDRESS, BEP20_MIN_DEPOSIT_USDT } from "../lib/game-config.js";
-import { verifyUsdtDeposit } from "../lib/bscscan.js";
+import { VIP_TIER_NAMES, VIP_TIER_EMOJIS, getLevelForXp, type CropConfig, type VipConfig } from "../lib/game-config.js";
 import { store, saveConfig, getMaxEnergyFromStore } from "../lib/config-store.js";
 
 const router = Router();
@@ -616,46 +617,28 @@ router.get("/deposits", async (req, res) => {
 
 router.post("/deposits/:id/reverify", async (req, res) => {
   const id = parseInt(String(req.params.id), 10);
+  const [deposit] = await db.select().from(depositsTable).where(eq(depositsTable.id, id)).limit(1);
 
-  const [deposit] = await db
-    .select()
-    .from(depositsTable)
-    .where(eq(depositsTable.id, id))
-    .limit(1);
-
-  if (!deposit) {
-    res.status(404).json({ error: "Deposit not found" });
-    return;
-  }
-
+  if (!deposit) { res.status(404).json({ error: "Deposit not found" }); return; }
   if (deposit.status === "completed") {
-    res.json({ success: true, id: deposit.id, status: "completed", message: "Already completed — no action taken." });
-    return;
+    res.json({ success: true, id, status: "completed", message: "Already completed." }); return;
   }
 
-  const result = await verifyUsdtDeposit(
-    deposit.txHash,
-    BEP20_WALLET_ADDRESS,
-    BEP20_MIN_DEPOSIT_USDT,
-  );
+  const result = await verifyUsdtDeposit(deposit.txHash, BEP20_WALLET_ADDRESS, BEP20_MIN_DEPOSIT_USDT);
 
   if (result.success) {
     const verifiedAmount = result.amountUsdt ?? parseFloat(String(deposit.amountUsdt));
 
     await db.transaction(async (tx) => {
-      await tx
-        .update(depositsTable)
-        .set({
-          status: "completed",
-          amountUsdt: String(verifiedAmount),
-          confirmations: result.confirmations,
-          verifiedAt: new Date(),
-          failReason: null,
-        })
-        .where(eq(depositsTable.id, id));
+      await tx.update(depositsTable).set({
+        status: "completed",
+        amountUsdt: String(verifiedAmount),
+        confirmations: result.confirmations,
+        verifiedAt: new Date(),
+        failReason: null,
+      }).where(eq(depositsTable.id, id));
 
-      await tx
-        .update(usersTable)
+      await tx.update(usersTable)
         .set({ usdtBalance: sql`${usersTable.usdtBalance} + ${String(verifiedAmount)}` })
         .where(eq(usersTable.id, deposit.userId));
     });
@@ -671,8 +654,7 @@ router.post("/deposits/:id/reverify", async (req, res) => {
 
     res.json({ success: true, id, status: "completed", amountUsdt: verifiedAmount });
   } else {
-    await db
-      .update(depositsTable)
+    await db.update(depositsTable)
       .set({ status: "failed", failReason: result.error ?? "Verification failed" })
       .where(eq(depositsTable.id, id));
 

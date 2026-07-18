@@ -1,44 +1,84 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import NotFound from '@/pages/not-found';
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { lazy, Suspense } from "react";
+import { AuthProvider } from "./components/auth-provider";
+import { Layout } from "./components/layout";
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
+import { Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
+// Lazy-load all page components — reduces initial bundle size
+const Home = lazy(() => import("./pages/home"));
+const Farm = lazy(() => import("./pages/farm"));
+const Shop = lazy(() => import("./pages/shop"));
+const Inventory = lazy(() => import("./pages/inventory"));
+const Leaderboard = lazy(() => import("./pages/leaderboard"));
+const Daily = lazy(() => import("./pages/daily"));
+const Missions = lazy(() => import("./pages/missions"));
+const Achievements = lazy(() => import("./pages/achievements"));
+const Stats = lazy(() => import("./pages/stats"));
+const Vip = lazy(() => import("./pages/vip"));
+const Deposit = lazy(() => import("./pages/deposit"));
+const Withdraw = lazy(() => import("./pages/withdraw"));
+const Invite = lazy(() => import("./pages/invite"));
+const Admin = lazy(() => import("./pages/admin"));
+const NotFound = lazy(() => import("./pages/not-found"));
 
-function Home() {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      // Keep data fresh for 30 seconds before background refetch
+      staleTime: 30_000,
+      // Keep unused data in cache for 5 minutes
+      gcTime: 5 * 60_000,
+    },
+  },
+});
+
+function PageLoader() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Replit Agent is building...
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Your app will appear here once it's ready.
-        </p>
-      </div>
+    <div className="flex-1 flex items-center justify-center py-16">
+      <Loader2 className="animate-spin text-primary" size={32} />
     </div>
   );
 }
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route component={NotFound} />
-    </Switch>
+    <Layout>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/farm" component={Farm} />
+          <Route path="/shop" component={Shop} />
+          <Route path="/inventory" component={Inventory} />
+          <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/daily" component={Daily} />
+          <Route path="/missions" component={Missions} />
+          <Route path="/achievements" component={Achievements} />
+          <Route path="/stats" component={Stats} />
+          <Route path="/vip" component={Vip} />
+          <Route path="/deposit" component={Deposit} />
+          <Route path="/withdraw" component={Withdraw} />
+          <Route path="/invite" component={Invite} />
+          <Route path="/admin" component={Admin} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    </Layout>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+      <AuthProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
         </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+        <Toaster position="top-center" theme="light" className="font-display" />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

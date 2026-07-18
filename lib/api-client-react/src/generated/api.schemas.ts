@@ -41,6 +41,7 @@ export interface UserProfile {
   isAdmin?: boolean;
   isBanned?: boolean;
   createdAt: string;
+  usdtBalance?: number;
   /** @nullable */
   energyRegenAt?: string | null;
 }
@@ -479,8 +480,74 @@ export interface ReferralInfo {
   referralBonusCoinsEarned: number;
 }
 
+export interface DepositWallet {
+  walletAddress: string;
+  network: string;
+  minDepositUsdt: number;
+  contractAddress: string;
+}
+
+export interface DepositSubmitInput {
+  txHash: string;
+  amountUsdt: number;
+}
+
+export interface DepositItem {
+  id: number;
+  txHash: string;
+  amountUsdt: number;
+  status: string;
+  /** @nullable */
+  failReason?: string | null;
+  network: string;
+  /** @nullable */
+  confirmations?: number | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+}
+
+export interface DepositResult {
+  id: number;
+  status: string;
+  amountUsdt: number;
+  message: string;
+  usdtBalance: number;
+}
+
+export interface AdminDeposit {
+  id: number;
+  userId: number;
+  username: string;
+  telegramId: string;
+  txHash: string;
+  amountUsdt: number;
+  status: string;
+  /** @nullable */
+  failReason?: string | null;
+  network: string;
+  /** @nullable */
+  confirmations?: number | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+}
+
+export interface AdminDepositsPage {
+  deposits: AdminDeposit[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export type GetLeaderboardParams = {
 limit?: number;
+};
+
+export type GetAdminDepositsParams = {
+status?: string;
+limit?: number;
+offset?: number;
 };
 
 export type GetAdminUsersParams = {
