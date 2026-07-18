@@ -46,6 +46,12 @@ export default function Farm() {
   const plantSeed = usePlantSeed();
   const harvestAll = useHarvestAll();
   const waterAll = useWaterAll();
+  const isBusy =
+  harvestPlot.isPending ||
+  waterPlot.isPending ||
+  plantSeed.isPending ||
+  harvestAll.isPending ||
+  waterAll.isPending;
 
   const hasReady = plots.some(p => p.state === "ready");
   const hasThirsty = plots.some(p => p.state === "needs_water");
