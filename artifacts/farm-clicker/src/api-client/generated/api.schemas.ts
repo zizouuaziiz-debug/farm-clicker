@@ -505,3 +505,72 @@ export const GetAdminVipPurchasesStatus = {
   rejected: 'rejected',
 } as const;
 
+
+// ── Deposit types ─────────────────────────────────────────────────────────────
+
+export interface DepositWalletInfo {
+  walletAddress: string;
+  network: string;
+  contractAddress: string;
+  coinsPerUsdt: number;
+}
+
+export interface DepositInput {
+  txHash: string;
+  amountUsdt: number;
+}
+
+export interface DepositResult {
+  id: number;
+  status: string;
+  message: string;
+  /** @nullable */
+  amountUsdt?: number | null;
+  /** @nullable */
+  coinsCredit?: number | null;
+  /** @nullable */
+  failReason?: string | null;
+}
+
+export interface Deposit {
+  id: number;
+  txHash: string;
+  amountUsdt: number;
+  coinsCredit: number;
+  status: string;
+  /** @nullable */
+  failReason?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+}
+
+// ── Admin deposit types ───────────────────────────────────────────────────────
+
+export interface AdminDeposit {
+  id: number;
+  userId: number;
+  username: string;
+  telegramId: string;
+  txHash: string;
+  amountUsdt: number;
+  coinsCredit: number;
+  status: string;
+  /** @nullable */
+  failReason?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+}
+
+export type GetAdminDepositsParams = {
+  status?: GetAdminDepositsStatus;
+};
+
+export type GetAdminDepositsStatus = typeof GetAdminDepositsStatus[keyof typeof GetAdminDepositsStatus];
+
+export const GetAdminDepositsStatus = {
+  pending: 'pending',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
