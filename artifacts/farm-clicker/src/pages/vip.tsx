@@ -6,9 +6,10 @@ import {
   useSubmitVipPurchase,
   getGetVipStatusQueryKey,
   getGetVipPurchasesQueryKey,
+  getGetMeQueryKey,
 } from "@/api-client";
 import { useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { GameCard, GameButton } from "@/components/ui/game-ui";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Copy, Loader2, Crown, CheckCircle2 } from "lucide-react";
+import { Copy, Loader2, Crown, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+
+type PurchaseResult = {
+  status: "approved" | "rejected" | "pending";
+  message: string;
+};
 
 function statusVariant(status: string): "default" | "destructive" | "secondary" {
   if (status === "approved") return "default";
@@ -32,47 +38,70 @@ function statusVariant(status: string): "default" | "destructive" | "secondary" 
 export default function Vip() {
   const queryClient = useQueryClient();
   const { data: plansData, isLoading: loadingPlans } = useGetVipPlans();
-  const { data: status } = useGetVipStatus({ query: { queryKey: getGetVipStatusQueryKey() } });
+  const { data: vipStatus } = useGetVipStatus({ query: { queryKey: getGetVipStatusQueryKey() } });
   const { data: purchases = [] } = useGetVipPurchases({ query: { queryKey: getGetVipPurchasesQueryKey() } });
   const submitPurchase = useSubmitVipPurchase();
 
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
-  const [walletSent, setWalletSent] = useState("");
   const [txHash, setTxHash] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [result, setResult] = useState<PurchaseResult | null>(null);
 
   const selectedPlan = plansData?.plans.find((p) => p.tier === selectedTier);
 
+  const walletAddress = plansData?.walletAddress ?? "";
+  const qrUrl = walletAddress
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(walletAddress)}&margin=2`
+    : "";
+
   const copyWallet = () => {
-    if (!plansData?.walletAddress) return;
-    navigator.clipboard.writeText(plansData.walletAddress);
+    if (!walletAddress) return;
+    navigator.clipboard.writeText(walletAddress);
     toast.success("Wallet address copied");
   };
 
   const openPlan = (tier: number) => {
     setSelectedTier(tier);
-    setWalletSent("");
     setTxHash("");
-    setSubmitted(false);
+    setResult(null);
   };
 
-  const handleSubmit = () => {
+  const closeModal = () => {
+    setSelectedTier(null);
+    setTxHash("");
+    setResult(null);
+  };
+
+  const handleSubmit = async () => {
     if (!selectedTier) return;
-    if (!walletSent.trim() || !txHash.trim()) {
-      toast.error("Please fill in both fields");
+    if (!txHash.trim()) {
+      toast.error("Please enter the transaction hash");
       return;
     }
-    submitPurchase.mutate(
-      { data: { tier: selectedTier, txHash: txHash.trim(), walletSent: walletSent.trim() } },
-      {
-        onSuccess: () => {
-          setSubmitted(true);
-          queryClient.invalidateQueries({ queryKey: getGetVipPurchasesQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetVipStatusQueryKey() });
-        },
-        onError: () => toast.error("Failed to submit. Try again."),
+    if (!/^0x[a-fA-F0-9]{64}$/.test(txHash.trim())) {
+      toast.error("Invalid transaction hash. Must start with 0x followed by 64 hex characters.");
+      return;
+    }
+
+    try {
+      const res = await submitPurchase.mutateAsync({
+        data: { tier: selectedTier, txHash: txHash.trim() },
+      });
+
+      setResult({ status: res.status as PurchaseResult["status"], message: res.message });
+
+      if (res.status === "approved") {
+        // Refresh VIP status + user profile to reflect new tier and energy
+        queryClient.invalidateQueries({ queryKey: getGetVipStatusQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetVipPurchasesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      } else {
+        queryClient.invalidateQueries({ queryKey: getGetVipPurchasesQueryKey() });
       }
-    );
+    } catch (err: unknown) {
+      const errData = (err as { data?: { failReason?: string; error?: string } })?.data;
+      const reason = errData?.failReason ?? errData?.error ?? "Verification failed. Please try again.";
+      setResult({ status: "rejected", message: reason });
+    }
   };
 
   if (loadingPlans) {
@@ -85,16 +114,18 @@ export default function Vip() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Status banner */}
+      {/* Active VIP banner */}
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        {status?.active ? (
+        {vipStatus?.active ? (
           <GameCard className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white border-amber-600 flex items-center gap-3">
             <Crown size={32} className="drop-shadow" />
             <div>
-              <h2 className="font-display font-bold text-lg leading-none">VIP {["", "Bronze", "Silver", "Gold", "Diamond", "Platinum"][status.vipLevel] || `Tier ${status.vipLevel}`} Active</h2>
-              {status.vipExpiresAt && (
+              <h2 className="font-display font-bold text-lg leading-none">
+                VIP {["", "Bronze", "Silver", "Gold", "Diamond", "Platinum"][vipStatus.vipLevel] ?? `Tier ${vipStatus.vipLevel}`} Active
+              </h2>
+              {vipStatus.vipExpiresAt && (
                 <p className="text-sm opacity-90">
-                  Expires {new Date(status.vipExpiresAt).toLocaleDateString()}
+                  Expires {new Date(vipStatus.vipExpiresAt).toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -110,7 +141,12 @@ export default function Vip() {
       {/* Plans */}
       <div className="space-y-4">
         {plansData?.plans.map((plan, i) => (
-          <motion.div key={plan.tier} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+          <motion.div
+            key={plan.tier}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
             <GameCard className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -141,13 +177,21 @@ export default function Vip() {
       {/* Purchase history */}
       {purchases.length > 0 && (
         <div className="space-y-2">
-          <h3 className="font-display font-bold text-muted-foreground uppercase text-xs tracking-wider px-2">History</h3>
+          <h3 className="font-display font-bold text-muted-foreground uppercase text-xs tracking-wider px-2">
+            History
+          </h3>
           {purchases.map((p) => (
             <GameCard key={p.id} className="flex items-center justify-between p-3">
               <div>
-                <p className="font-display font-bold text-sm">Tier {p.tier} · ${p.priceUsdt}</p>
-                <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
-                {p.rejectReason && <p className="text-xs text-destructive mt-1">{p.rejectReason}</p>}
+                <p className="font-display font-bold text-sm">
+                  Tier {p.tier} · ${p.priceUsdt}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(p.createdAt).toLocaleDateString()}
+                </p>
+                {p.rejectReason && (
+                  <p className="text-xs text-destructive mt-1">{p.rejectReason}</p>
+                )}
               </div>
               <Badge variant={statusVariant(p.status)}>{p.status}</Badge>
             </GameCard>
@@ -155,51 +199,148 @@ export default function Vip() {
         </div>
       )}
 
-      {/* Purchase modal */}
-      <Dialog open={selectedTier !== null} onOpenChange={(open) => !open && setSelectedTier(null)}>
+      {/* ── Purchase modal ── */}
+      <Dialog open={selectedTier !== null} onOpenChange={(open) => !open && closeModal()}>
         <DialogContent className="max-w-sm rounded-3xl">
           <DialogHeader>
             <DialogTitle className="font-display">
-              {selectedPlan ? `${selectedPlan.emoji} ${selectedPlan.name} — $${selectedPlan.priceUsdt}` : ""}
+              {selectedPlan
+                ? `${selectedPlan.emoji} ${selectedPlan.name} — $${selectedPlan.priceUsdt} USDT`
+                : ""}
             </DialogTitle>
             <DialogDescription>
-              Send USDT ({plansData?.network}) to the address below, then submit your transaction hash for review.
+              Send exactly <strong>${selectedPlan?.priceUsdt} USDT</strong> (BEP20 · BSC) to the
+              address below, then paste your transaction hash. Activation is instant.
             </DialogDescription>
           </DialogHeader>
 
-          {submitted ? (
-            <div className="text-center py-4 space-y-2">
-              <CheckCircle2 className="mx-auto text-primary" size={40} />
-              <p className="font-display font-bold">Submitted for review</p>
-              <p className="text-sm text-muted-foreground">Your VIP will activate within 24h once verified.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground mb-1">Send to ({plansData?.network})</p>
-                <div className="flex items-center justify-between gap-2">
-                  <code className="text-xs break-all">{plansData?.walletAddress}</code>
-                  <button onClick={copyWallet} className="shrink-0 p-1.5 rounded-lg hover:bg-background">
-                    <Copy size={16} />
-                  </button>
+          <AnimatePresence mode="wait">
+            {result ? (
+              /* ── Result screen ── */
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="py-4 space-y-4 text-center"
+              >
+                {result.status === "approved" ? (
+                  <>
+                    <CheckCircle2 className="mx-auto text-green-500" size={48} />
+                    <div>
+                      <p className="font-display font-bold text-lg">VIP Activated! 🎉</p>
+                      <p className="text-sm text-muted-foreground mt-1">{result.message}</p>
+                    </div>
+                    <GameButton className="w-full" onClick={closeModal}>
+                      Continue
+                    </GameButton>
+                  </>
+                ) : result.status === "pending" ? (
+                  <>
+                    <Clock className="mx-auto text-yellow-500" size={48} />
+                    <div>
+                      <p className="font-display font-bold text-lg">Under Review</p>
+                      <p className="text-sm text-muted-foreground mt-1">{result.message}</p>
+                    </div>
+                    <GameButton className="w-full" onClick={closeModal}>
+                      OK
+                    </GameButton>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="mx-auto text-destructive" size={48} />
+                    <div>
+                      <p className="font-display font-bold text-lg">Verification Failed</p>
+                      <p className="text-sm text-muted-foreground mt-1">{result.message}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <GameButton
+                        className="flex-1"
+                        variant="outline"
+                        onClick={() => setResult(null)}
+                      >
+                        Try Again
+                      </GameButton>
+                      <GameButton className="flex-1" onClick={closeModal}>
+                        Close
+                      </GameButton>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            ) : (
+              /* ── Payment form ── */
+              <motion.div
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                {/* Wallet address + QR */}
+                <div className="bg-muted rounded-2xl p-3 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Send to (BEP20 · BSC only)
+                  </p>
+                  <div className="flex gap-3 items-center">
+                    {qrUrl && (
+                      <img
+                        src={qrUrl}
+                        alt="Wallet QR"
+                        className="w-[80px] h-[80px] rounded-xl border border-border shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <code className="text-[11px] break-all text-gray-700 leading-relaxed">
+                        {walletAddress}
+                      </code>
+                      <button
+                        onClick={copyWallet}
+                        className="mt-1.5 flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+                      >
+                        <Copy size={12} />
+                        Copy address
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-sm font-display font-bold">
+                    Amount: <span className="text-primary">${selectedPlan?.priceUsdt} USDT</span>
+                  </p>
+                  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-2 py-1.5">
+                    ⚠️ Only send on <strong>Binance Smart Chain (BEP20)</strong>. Do not use TRC20 or ERC20.
+                  </p>
                 </div>
-                <p className="text-sm font-display font-bold mt-2">Amount: ${selectedPlan?.priceUsdt} USDT</p>
-              </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="walletSent">Your USDT wallet (sent from)</Label>
-                <Input id="walletSent" value={walletSent} onChange={(e) => setWalletSent(e.target.value)} placeholder="T..." />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="txHash">Transaction Hash (TxID)</Label>
-                <Input id="txHash" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x..." />
-              </div>
+                {/* TxHash field only */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="txHash">Transaction Hash (TxID)</Label>
+                  <Input
+                    id="txHash"
+                    value={txHash}
+                    onChange={(e) => setTxHash(e.target.value)}
+                    placeholder="0x..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Find this on BscScan after your transfer confirms.
+                  </p>
+                </div>
 
-              <GameButton className="w-full" onClick={handleSubmit} disabled={submitPurchase.isPending}>
-                {submitPurchase.isPending ? <Loader2 className="animate-spin" size={16} /> : "Submit for Review"}
-              </GameButton>
-            </div>
-          )}
+                <GameButton
+                  className="w-full"
+                  onClick={handleSubmit}
+                  disabled={submitPurchase.isPending || !txHash.trim()}
+                >
+                  {submitPurchase.isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={16} />
+                      Verifying on-chain…
+                    </span>
+                  ) : (
+                    "Verify & Activate VIP"
+                  )}
+                </GameButton>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </DialogContent>
       </Dialog>
     </div>

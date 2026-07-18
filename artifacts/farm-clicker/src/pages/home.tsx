@@ -1,6 +1,6 @@
 import { useGetDashboard } from "@/api-client";
 import { Link } from "wouter";
-import { Calendar, Target, Award, BarChart3, ChevronRight, Sprout, Crown, ArrowDownToLine, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Calendar, Target, Award, BarChart3, ChevronRight, Sprout, Crown, ArrowDownToLine, ShieldCheck, Users } from "lucide-react";
 import { GameCard } from "@/components/ui/game-ui";
 import { useAuth } from "@/components/auth-provider";
 
@@ -125,18 +125,6 @@ export default function Home() {
           </GameCard>
         </Link>
 
-
-        <Link href="/deposit">
-          <GameCard className="flex items-center justify-between p-4 active:bg-muted transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center border border-green-200">
-                <Wallet size={20} />
-              </div>
-              <span className="font-display font-bold text-lg">Deposit USDT</span>
-            </div>
-            <ChevronRight className="text-muted-foreground" size={20} />
-          </GameCard>
-        </Link>
         <Link href="/withdraw">
           <GameCard className="flex items-center justify-between p-4 active:bg-muted transition-colors">
             <div className="flex items-center gap-3">

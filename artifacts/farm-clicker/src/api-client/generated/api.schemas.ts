@@ -297,7 +297,8 @@ export interface VipPurchase {
 export interface VipPurchaseInput {
   tier: number;
   txHash: string;
-  walletSent: string;
+  /** @deprecated No longer required — verification is automatic */
+  walletSent?: string;
 }
 
 export interface VipPurchaseSubmitResult {
@@ -306,6 +307,8 @@ export interface VipPurchaseSubmitResult {
   priceUsdt: number;
   status: string;
   message: string;
+  /** @nullable */
+  failReason?: string | null;
 }
 
 export interface WithdrawInfo {
