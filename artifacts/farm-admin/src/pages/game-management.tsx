@@ -102,8 +102,17 @@ export default function GameManagement() {
   // ── Edit mode controls ──────────────────────────────────────────────────────
 
   const handleEdit = () => {
-  console.log("CONFIG:", config);
-  console.log("CROPS:", config?.crops);
+  console.log("=== CROPS ===");
+
+  config?.crops.forEach((crop) => {
+    console.log(
+      crop.name,
+      "xpReward =",
+      crop.xpReward,
+      "type =",
+      typeof crop.xpReward
+    );
+  });
 
   setDraft(JSON.parse(JSON.stringify(config)));
   setEditing(true);
