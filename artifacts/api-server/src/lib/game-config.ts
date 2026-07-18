@@ -1,0 +1,275 @@
+export interface CropConfig {
+  cropType: string;
+  name: string;
+  emoji: string;
+  buyCost: number;
+  sellPrice: number;
+  growTimeMs: number;
+  waterNeeded: number;
+  requiredLevel: number;
+  xpReward: number;
+  coinsPerHarvest: number;
+  quantity: number;
+  witherGraceMs: number;
+}
+
+export const CROPS: Record<string, CropConfig> = {
+  wheat: {
+    cropType: "wheat",
+    name: "Wheat",
+    emoji: "🌾",
+    buyCost: 10,
+    sellPrice: 25,
+    growTimeMs: 5 * 60 * 1000,
+    waterNeeded: 1,
+    requiredLevel: 1,
+    xpReward: 10,
+    coinsPerHarvest: 25,
+    quantity: 3,
+    witherGraceMs: 30 * 60 * 1000,
+  },
+  sunflower: {
+    cropType: "sunflower",
+    name: "Sunflower",
+    emoji: "🌻",
+    buyCost: 20,
+    sellPrice: 55,
+    growTimeMs: 8 * 60 * 1000,
+    waterNeeded: 1,
+    requiredLevel: 2,
+    xpReward: 15,
+    coinsPerHarvest: 55,
+    quantity: 2,
+    witherGraceMs: 45 * 60 * 1000,
+  },
+  tomato: {
+    cropType: "tomato",
+    name: "Tomato",
+    emoji: "🍅",
+    buyCost: 30,
+    sellPrice: 70,
+    growTimeMs: 15 * 60 * 1000,
+    waterNeeded: 2,
+    requiredLevel: 3,
+    xpReward: 25,
+    coinsPerHarvest: 70,
+    quantity: 2,
+    witherGraceMs: 60 * 60 * 1000,
+  },
+  carrot: {
+    cropType: "carrot",
+    name: "Carrot",
+    emoji: "🥕",
+    buyCost: 45,
+    sellPrice: 110,
+    growTimeMs: 22 * 60 * 1000,
+    waterNeeded: 2,
+    requiredLevel: 4,
+    xpReward: 35,
+    coinsPerHarvest: 110,
+    quantity: 3,
+    witherGraceMs: 90 * 60 * 1000,
+  },
+  potato: {
+    cropType: "potato",
+    name: "Potato",
+    emoji: "🥔",
+    buyCost: 60,
+    sellPrice: 150,
+    growTimeMs: 30 * 60 * 1000,
+    waterNeeded: 3,
+    requiredLevel: 5,
+    xpReward: 50,
+    coinsPerHarvest: 150,
+    quantity: 4,
+    witherGraceMs: 2 * 60 * 60 * 1000,
+  },
+  corn: {
+    cropType: "corn",
+    name: "Corn",
+    emoji: "🌽",
+    buyCost: 80,
+    sellPrice: 200,
+    growTimeMs: 45 * 60 * 1000,
+    waterNeeded: 3,
+    requiredLevel: 6,
+    xpReward: 60,
+    coinsPerHarvest: 200,
+    quantity: 4,
+    witherGraceMs: 3 * 60 * 60 * 1000,
+  },
+};
+
+export type CropHarvestField =
+  | "cropsHarvestedWheat"
+  | "cropsHarvestedSunflower"
+  | "cropsHarvestedTomato"
+  | "cropsHarvestedCarrot"
+  | "cropsHarvestedPotato"
+  | "cropsHarvestedCorn";
+
+export const CROP_HARVEST_FIELDS: Record<string, CropHarvestField> = {
+  wheat: "cropsHarvestedWheat",
+  sunflower: "cropsHarvestedSunflower",
+  tomato: "cropsHarvestedTomato",
+  carrot: "cropsHarvestedCarrot",
+  potato: "cropsHarvestedPotato",
+  corn: "cropsHarvestedCorn",
+};
+
+export interface VipConfig {
+  tier: number;
+  name: string;
+  emoji: string;
+  priceUsdt: number;
+  durationDays: number;
+  maxEnergy: number;
+  xpMultiplier: number;
+  growSpeedMultiplier: number;
+  benefits: string[];
+  maxSlots: number;
+}
+
+export const VIP_PLANS: VipConfig[] = [
+  {
+    tier: 1,
+    name: "Bronze",
+    emoji: "🥉",
+    priceUsdt: 3,
+    durationDays: 30,
+    maxEnergy: 75,
+    xpMultiplier: 1.2,
+    growSpeedMultiplier: 1.1,
+    benefits: ["75 max energy", "1.2x XP", "4 farm slots", "10% faster crops", "Bronze VIP badge"],
+    maxSlots: 4,
+  },
+  {
+    tier: 2,
+    name: "Silver",
+    emoji: "🥈",
+    priceUsdt: 10,
+    durationDays: 30,
+    maxEnergy: 100,
+    xpMultiplier: 1.5,
+    growSpeedMultiplier: 1.2,
+    benefits: ["100 max energy", "1.5x XP", "5 farm slots", "20% faster crops", "Harvest-all button", "Silver VIP badge"],
+    maxSlots: 5,
+  },
+  {
+    tier: 3,
+    name: "Gold",
+    emoji: "🥇",
+    priceUsdt: 25,
+    durationDays: 30,
+    maxEnergy: 200,
+    xpMultiplier: 2.0,
+    growSpeedMultiplier: 1.5,
+    benefits: ["200 max energy", "2x XP", "8 farm slots", "50% faster crops", "Water-all button", "Ad-free energy", "Gold VIP badge"],
+    maxSlots: 8,
+  },
+  {
+    tier: 4,
+    name: "Diamond",
+    emoji: "💎",
+    priceUsdt: 50,
+    durationDays: 30,
+    maxEnergy: 500,
+    xpMultiplier: 3.0,
+    growSpeedMultiplier: 2.0,
+    benefits: ["500 max energy", "3x XP", "12 farm slots", "2x grow speed", "All Gold perks", "Priority support", "Diamond VIP badge"],
+    maxSlots: 12,
+  },
+  {
+    tier: 5,
+    name: "Platinum",
+    emoji: "💫",
+    priceUsdt: 100,
+    durationDays: 30,
+    maxEnergy: 1000,
+    xpMultiplier: 5.0,
+    growSpeedMultiplier: 3.0,
+    benefits: ["1000 max energy", "5x XP", "16 farm slots", "3x grow speed", "All Diamond perks", "Exclusive Platinum badge", "Dedicated support"],
+    maxSlots: 16,
+  },
+];
+
+export const VIP_TIER_NAMES: Record<number, string> = {
+  0: "None",
+  1: "Bronze",
+  2: "Silver",
+  3: "Gold",
+  4: "Diamond",
+  5: "Platinum",
+};
+
+export const VIP_TIER_EMOJIS: Record<number, string> = {
+  0: "",
+  1: "🥉",
+  2: "🥈",
+  3: "🥇",
+  4: "💎",
+  5: "💫",
+};
+
+export const BASE_SLOTS = 9;
+
+export function getSlotsForVip(vipLevel: number): number {
+  if (vipLevel === 0) return BASE_SLOTS;
+  const plan = VIP_PLANS.find((p) => p.tier === vipLevel);
+  return plan ? plan.maxSlots : BASE_SLOTS;
+}
+
+export function getMaxEnergyForVip(vipLevel: number): number {
+  if (vipLevel === 0) return 50;
+  const plan = VIP_PLANS.find((p) => p.tier === vipLevel);
+  return plan ? plan.maxEnergy : 50;
+}
+
+export const LEVEL_THRESHOLDS: number[] = [0, 100, 250, 500, 1000, 2000, 4000, 7000, 11000, 16000, 22000];
+
+export function getLevelForXp(xp: number): number {
+  let level = 1;
+  for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
+    if (xp >= LEVEL_THRESHOLDS[i]) {
+      level = i + 1;
+    } else {
+      break;
+    }
+  }
+  return level;
+}
+
+export const ENERGY_REFILL_COST = 50;
+export const ENERGY_PER_PLANT = 1;
+export const ENERGY_REGEN_INTERVAL_MS = 3 * 60 * 1000;
+
+export const VIP_WALLET = process.env.VIP_WALLET_ADDRESS || "TBD_SET_VIP_WALLET_ADDRESS";
+export const VIP_NETWORK = "TRC20 (USDT)";
+
+// ── BEP20 Deposit System ──────────────────────────────────────────────────────
+export const BEP20_WALLET_ADDRESS =
+  process.env.BEP20_WALLET_ADDRESS || "0xd5be094ca8bb37464b587b172c5733a4f7971c26";
+export const BEP20_MIN_DEPOSIT_USDT = Number(process.env.BEP20_MIN_DEPOSIT_USDT) || 5;
+export const WITHDRAW_NETWORKS = ["TRC20", "ERC20", "BEP20"] as const;
+export type WithdrawNetwork = typeof WITHDRAW_NETWORKS[number];
+
+export const WITHDRAW_COINS_PER_USDT = 1000;
+export const WITHDRAW_MIN_COINS = 5000;
+
+export const DAILY_REWARDS = [
+  { coins: 50, xp: 10 },
+  { coins: 75, xp: 15 },
+  { coins: 100, xp: 20 },
+  { coins: 150, xp: 30 },
+  { coins: 200, xp: 40 },
+  { coins: 300, xp: 60 },
+  { coins: 500, xp: 100, bonus: "🎁 Bonus Day!" },
+];
+
+export const AD_ENERGY_REWARD = 20;
+export const AD_BONUS_COINS = 100;
+export const AD_COOLDOWN_MS = 30 * 60 * 1000;
+
+// Referral system: coins granted immediately (once) when a referral is attributed at signup.
+export const REFERRAL_SIGNUP_BONUS_COINS = 100;
+export const REFERRAL_INVITER_BONUS_COINS = 200;

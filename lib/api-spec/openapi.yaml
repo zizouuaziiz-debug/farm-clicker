@@ -3,20 +3,35 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Farm Clicker Telegram Mini App API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: user
+  - name: farm
+  - name: inventory
+  - name: shop
+  - name: leaderboard
+  - name: daily
+  - name: missions
+  - name: achievements
+  - name: stats
+  - name: vip
+  - name: deposit
+  - name: withdraw
+  - name: admin
+  - name: ads
+  - name: referrals
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +39,1821 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/telegram:
+    post:
+      operationId: authTelegram
+      tags: [auth]
+      summary: Authenticate via Telegram initData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramAuthInput"
+      responses:
+        "200":
+          description: Auth result with JWT token and user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "400":
+          description: Bad request
+        "401":
+          description: Invalid Telegram data
+
+  /user/me:
+    get:
+      operationId: getMe
+      tags: [user]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /user/me/energy:
+    post:
+      operationId: refillEnergy
+      tags: [user]
+      summary: Refill energy with coins
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Not enough coins
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [user]
+      summary: Get dashboard summary for home screen
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /farm/plots:
+    get:
+      operationId: getFarmPlots
+      tags: [farm]
+      summary: Get all farm plots for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of farm plots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FarmPlot"
+
+  /farm/plant:
+    post:
+      operationId: plantSeed
+      tags: [farm]
+      summary: Plant a seed in a slot
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlantInput"
+      responses:
+        "200":
+          description: Updated plot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmPlot"
+        "400":
+          description: Cannot plant
+
+  /farm/harvest/{plotId}:
+    post:
+      operationId: harvestPlot
+      tags: [farm]
+      summary: Harvest a ready plot
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: plotId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Harvest result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HarvestResult"
+        "400":
+          description: Plot not ready
+
+  /farm/water/{plotId}:
+    post:
+      operationId: waterPlot
+      tags: [farm]
+      summary: Water a thirsty plot
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: plotId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated plot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmPlot"
+        "400":
+          description: Plot doesn't need water
+
+  /farm/harvest-all:
+    post:
+      operationId: harvestAll
+      tags: [farm]
+      summary: Harvest all ready plots at once (VIP)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Bulk harvest result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HarvestAllResult"
+
+  /farm/water-all:
+    post:
+      operationId: waterAll
+      tags: [farm]
+      summary: Water all thirsty plots at once (VIP)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Bulk water result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaterAllResult"
+
+  /inventory:
+    get:
+      operationId: getInventory
+      tags: [inventory]
+      summary: Get current user inventory
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+
+  /shop/seeds:
+    get:
+      operationId: getShopSeeds
+      tags: [shop]
+      summary: Get available seeds in the shop
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of seed info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeedInfo"
+
+  /shop/buy:
+    post:
+      operationId: buySeeds
+      tags: [shop]
+      summary: Buy seeds from the shop
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyInput"
+      responses:
+        "200":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResult"
+        "400":
+          description: Not enough coins or level
+
+  /shop/sell:
+    post:
+      operationId: sellItems
+      tags: [shop]
+      summary: Sell harvested items
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellInput"
+      responses:
+        "200":
+          description: Sale result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleResult"
+        "400":
+          description: Not enough items
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get leaderboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /daily/reward:
+    get:
+      operationId: getDailyReward
+      tags: [daily]
+      summary: Get daily reward status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Daily reward status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRewardStatus"
+
+  /daily/claim:
+    post:
+      operationId: claimDailyReward
+      tags: [daily]
+      summary: Claim today's daily reward
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Claim result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRewardClaim"
+        "400":
+          description: Already claimed
+
+  /missions:
+    get:
+      operationId: getMissions
+      tags: [missions]
+      summary: Get today's missions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of missions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Mission"
+
+  /missions/{id}/claim:
+    post:
+      operationId: claimMissionReward
+      tags: [missions]
+      summary: Claim reward for a completed mission
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Claim result with updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Mission not completed or already claimed
+
+  /achievements:
+    get:
+      operationId: getAchievements
+      tags: [achievements]
+      summary: Get player achievements
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of achievements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Achievement"
+
+  /stats:
+    get:
+      operationId: getPlayerStats
+      tags: [stats]
+      summary: Get detailed player statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Player stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerStats"
+
+  /vip/plans:
+    get:
+      operationId: getVipPlans
+      tags: [vip]
+      summary: Get available VIP plans
+      responses:
+        "200":
+          description: VIP plans and wallet address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VipPlansResponse"
+
+  /vip/status:
+    get:
+      operationId: getVipStatus
+      tags: [vip]
+      summary: Get current user VIP status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: VIP status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VipStatus"
+
+  /vip/purchases:
+    get:
+      operationId: getVipPurchases
+      tags: [vip]
+      summary: Get current user's VIP purchase history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of VIP purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VipPurchase"
+
+  /vip/purchase:
+    post:
+      operationId: submitVipPurchase
+      tags: [vip]
+      summary: Submit a VIP payment for review
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VipPurchaseInput"
+      responses:
+        "200":
+          description: Purchase submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VipPurchaseSubmitResult"
+        "400":
+          description: Invalid input
+
+  /deposit/wallet:
+    get:
+      operationId: getDepositWallet
+      tags: [deposit]
+      summary: Get BEP20 deposit wallet address and info
+      responses:
+        "200":
+          description: Deposit wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositWallet"
+
+  /deposit/history:
+    get:
+      operationId: getDepositHistory
+      tags: [deposit]
+      summary: Get current user's deposit history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of deposits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositItem"
+
+  /deposit/submit:
+    post:
+      operationId: submitDeposit
+      tags: [deposit]
+      summary: Submit a BEP20 USDT deposit for auto-verification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositSubmitInput"
+      responses:
+        "200":
+          description: Deposit verified and credited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositResult"
+        "400":
+          description: Verification failed or invalid input
+        "409":
+          description: Transaction hash already used
+
+  /admin/deposits:
+    get:
+      operationId: getAdminDeposits
+      tags: [admin]
+      summary: Get all deposits (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated list of deposits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDepositsPage"
+
+  /admin/deposits/{id}/reverify:
+    post:
+      operationId: reverifyDeposit
+      tags: [admin]
+      summary: Re-verify a deposit transaction (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Re-verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResult"
+        "404":
+          description: Deposit not found
+
+  /withdraw/info:
+    get:
+      operationId: getWithdrawInfo
+      tags: [withdraw]
+      summary: Get withdrawal configuration
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Withdrawal info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithdrawInfo"
+
+  /withdraw/history:
+    get:
+      operationId: getWithdrawHistory
+      tags: [withdraw]
+      summary: Get withdrawal history for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of withdrawals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Withdrawal"
+
+  /withdraw/request:
+    post:
+      operationId: requestWithdrawal
+      tags: [withdraw]
+      summary: Request a withdrawal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawInput"
+      responses:
+        "200":
+          description: Withdrawal result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithdrawalResult"
+        "400":
+          description: Insufficient coins or invalid input
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: getAdminUsers
+      tags: [admin]
+      summary: Get paginated user list
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersPage"
+
+  /admin/users/{id}:
+    patch:
+      operationId: updateAdminUser
+      tags: [admin]
+      summary: Ban/unban user, set admin, set VIP
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /admin/withdrawals:
+    get:
+      operationId: getAdminWithdrawals
+      tags: [admin]
+      summary: Get withdrawals (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, rejected]
+      responses:
+        "200":
+          description: Array of withdrawals with user info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminWithdrawal"
+
+  /admin/withdrawals/{id}/approve:
+    post:
+      operationId: approveWithdrawal
+      tags: [admin]
+      summary: Approve a withdrawal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminApproveWithdrawalInput"
+      responses:
+        "200":
+          description: Action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResult"
+        "404":
+          description: Not found
+
+  /admin/withdrawals/{id}/reject:
+    post:
+      operationId: rejectWithdrawal
+      tags: [admin]
+      summary: Reject a withdrawal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRejectInput"
+      responses:
+        "200":
+          description: Action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResult"
+        "404":
+          description: Not found
+
+  /admin/vip-purchases:
+    get:
+      operationId: getAdminVipPurchases
+      tags: [admin]
+      summary: Get VIP purchases (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+      responses:
+        "200":
+          description: Array of VIP purchases with user info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminVipPurchase"
+
+  /admin/vip-purchases/{id}/approve:
+    post:
+      operationId: approveVipPurchase
+      tags: [admin]
+      summary: Approve a VIP purchase
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResult"
+        "404":
+          description: Not found
+
+  /admin/vip-purchases/{id}/reject:
+    post:
+      operationId: rejectVipPurchase
+      tags: [admin]
+      summary: Reject a VIP purchase
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRejectInput"
+      responses:
+        "200":
+          description: Action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminActionResult"
+        "404":
+          description: Not found
+
+  /ads/status:
+    get:
+      operationId: getAdsStatus
+      tags: [ads]
+      summary: Get ad placement availability status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Ads status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdsStatus"
+
+  /ads/ticket:
+    post:
+      operationId: requestAdTicket
+      tags: [ads]
+      summary: Check eligibility and issue a single-use ticket before an ad plays
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdTicketRequest"
+      responses:
+        "200":
+          description: Ticket issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdTicketResult"
+        "400":
+          description: Not eligible (cooldown active, energy full, etc.)
+
+  /ads/claim:
+    post:
+      operationId: claimAdReward
+      tags: [ads]
+      summary: Redeem a ticket after the ad SDK reports completion and grant its reward
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdClaimRequest"
+      responses:
+        "200":
+          description: Reward granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdRewardResult"
+        "400":
+          description: Ticket invalid, expired, already claimed, or no longer eligible
+
+  /referrals/me:
+    get:
+      operationId: getMyReferrals
+      tags: [referrals]
+      summary: Get the current user's referral code, share link, and stats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Referral info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralInfo"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    TelegramAuthInput:
+      type: object
+      properties:
+        initData:
+          type: string
+          description: Raw Telegram WebApp initData string
+        referralCode:
+          type: string
+          description: Referral code (or raw start_param) from a shared invite link. Only applied the first time an account is created.
+      required: [initData]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegramId:
+          type: string
+        username:
+          type: string
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        coins:
+          type: integer
+        xp:
+          type: integer
+        level:
+          type: integer
+        energy:
+          type: integer
+        maxEnergy:
+          type: integer
+        vipLevel:
+          type: integer
+        vipExpiresAt:
+          type: ["string", "null"]
+        totalHarvests:
+          type: integer
+        totalCoinsEarned:
+          type: integer
+        referralCode:
+          type: ["string", "null"]
+        isAdmin:
+          type: boolean
+        isBanned:
+          type: boolean
+        createdAt:
+          type: string
+        usdtBalance:
+          type: number
+        energyRegenAt:
+          type: ["string", "null"]
+      required: [id, telegramId, username, coins, xp, level, energy, maxEnergy, vipLevel, createdAt]
+
+    AuthResult:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [token, user]
+
+    DashboardSummary:
+      type: object
+      properties:
+        readyToHarvest:
+          type: integer
+        needsWater:
+          type: integer
+        todayClaimed:
+          type: boolean
+        currentStreak:
+          type: integer
+        level:
+          type: integer
+        coins:
+          type: integer
+        energy:
+          type: integer
+        maxEnergy:
+          type: integer
+      required: [readyToHarvest, needsWater, todayClaimed, currentStreak, level, coins, energy, maxEnergy]
+
+    FarmPlotState:
+      type: string
+      enum: [empty, planted, growing, needs_water, ready, withered, dead]
+
+    FarmPlot:
+      type: object
+      properties:
+        id:
+          type: integer
+        slot:
+          type: integer
+        state:
+          $ref: "#/components/schemas/FarmPlotState"
+        cropType:
+          type: ["string", "null"]
+        plantedAt:
+          type: ["string", "null"]
+        readyAt:
+          type: ["string", "null"]
+        wateredAt:
+          type: ["string", "null"]
+        waterStage:
+          type: ["integer", "null"]
+        growthPercent:
+          type: ["integer", "null"]
+      required: [id, slot, state]
+
+    PlantInputCropType:
+      type: string
+      enum: [wheat, sunflower, tomato, carrot, potato, corn]
+
+    PlantInput:
+      type: object
+      properties:
+        slot:
+          type: integer
+        cropType:
+          $ref: "#/components/schemas/PlantInputCropType"
+      required: [slot, cropType]
+
+    HarvestResult:
+      type: object
+      properties:
+        cropType:
+          type: string
+        quantity:
+          type: integer
+        coinsEarned:
+          type: integer
+        xpEarned:
+          type: integer
+        levelUp:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [cropType, quantity, coinsEarned, xpEarned, user]
+
+    HarvestAllResult:
+      type: object
+      properties:
+        harvested:
+          type: integer
+        totalCoins:
+          type: integer
+        totalXp:
+          type: integer
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [harvested, totalCoins, totalXp, user]
+
+    WaterAllResult:
+      type: object
+      properties:
+        watered:
+          type: integer
+      required: [watered]
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        itemType:
+          type: string
+        quantity:
+          type: integer
+      required: [id, itemType, quantity]
+
+    SeedInfo:
+      type: object
+      properties:
+        cropType:
+          type: string
+        name:
+          type: string
+        emoji:
+          type: string
+        buyCost:
+          type: integer
+        sellPrice:
+          type: integer
+        growTime:
+          type: integer
+        waterNeeded:
+          type: integer
+        requiredLevel:
+          type: integer
+        xpReward:
+          type: integer
+      required: [cropType, name, emoji, buyCost, sellPrice, growTime, waterNeeded, requiredLevel]
+
+    BuyInput:
+      type: object
+      properties:
+        cropType:
+          type: string
+        quantity:
+          type: integer
+      required: [cropType, quantity]
+
+    PurchaseResult:
+      type: object
+      properties:
+        cropType:
+          type: string
+        quantity:
+          type: integer
+        totalCost:
+          type: integer
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [cropType, quantity, totalCost, user]
+
+    SellInput:
+      type: object
+      properties:
+        itemType:
+          type: string
+        quantity:
+          type: integer
+      required: [itemType, quantity]
+
+    SaleResult:
+      type: object
+      properties:
+        totalCoins:
+          type: integer
+        itemsSold:
+          type: integer
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [totalCoins, itemsSold, user]
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        firstName:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        coins:
+          type: integer
+        level:
+          type: integer
+        totalHarvests:
+          type: integer
+        vipLevel:
+          type: integer
+      required: [rank, userId, username, coins, level, totalHarvests, vipLevel]
+
+    RewardItem:
+      type: object
+      properties:
+        coins:
+          type: integer
+        xp:
+          type: integer
+        energy:
+          type: integer
+        bonus:
+          type: ["string", "null"]
+      required: [coins, xp]
+
+    DailyRewardStatus:
+      type: object
+      properties:
+        day:
+          type: integer
+        claimed:
+          type: boolean
+        streak:
+          type: integer
+        reward:
+          $ref: "#/components/schemas/RewardItem"
+        nextReward:
+          $ref: "#/components/schemas/RewardItem"
+      required: [day, claimed, streak, reward, nextReward]
+
+    DailyRewardClaim:
+      type: object
+      properties:
+        day:
+          type: integer
+        streak:
+          type: integer
+        reward:
+          $ref: "#/components/schemas/RewardItem"
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [day, streak, reward, user]
+
+    Mission:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        missionType:
+          type: string
+        goal:
+          type: integer
+        progress:
+          type: integer
+        completed:
+          type: boolean
+        claimed:
+          type: boolean
+        reward:
+          $ref: "#/components/schemas/RewardItem"
+      required: [id, title, description, missionType, goal, progress, completed, claimed, reward]
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        unlocked:
+          type: boolean
+        unlockedAt:
+          type: ["string", "null"]
+        progress:
+          type: integer
+        goal:
+          type: integer
+      required: [id, title, description, emoji, category, unlocked, progress, goal]
+
+    PlayerStatsCropsHarvestedByType:
+      type: object
+      properties:
+        wheat:
+          type: integer
+        sunflower:
+          type: integer
+        tomato:
+          type: integer
+        carrot:
+          type: integer
+        potato:
+          type: integer
+        corn:
+          type: integer
+      required: [wheat, sunflower, tomato, carrot, potato, corn]
+
+    PlayerStats:
+      type: object
+      properties:
+        totalHarvests:
+          type: integer
+        totalWatered:
+          type: integer
+        totalCoinsEarned:
+          type: integer
+        totalCoinsSent:
+          type: integer
+        totalXpEarned:
+          type: integer
+        cropsHarvestedByType:
+          $ref: "#/components/schemas/PlayerStatsCropsHarvestedByType"
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        daysSinceJoined:
+          type: integer
+        level:
+          type: integer
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [totalHarvests, totalWatered, totalCoinsEarned, totalCoinsSent, totalXpEarned, cropsHarvestedByType, currentStreak, longestStreak, daysSinceJoined, level, user]
+
+    VipPlan:
+      type: object
+      properties:
+        tier:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        priceUsdt:
+          type: number
+        durationDays:
+          type: integer
+        maxEnergy:
+          type: integer
+        xpMultiplier:
+          type: number
+        benefits:
+          type: array
+          items:
+            type: string
+      required: [tier, name, emoji, priceUsdt, durationDays, maxEnergy, xpMultiplier, benefits]
+
+    VipPlansResponse:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+        network:
+          type: string
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/VipPlan"
+      required: [walletAddress, network, plans]
+
+    VipStatus:
+      type: object
+      properties:
+        vipLevel:
+          type: integer
+        vipExpiresAt:
+          type: ["string", "null"]
+        active:
+          type: boolean
+      required: [vipLevel, active]
+
+    VipPurchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        tier:
+          type: integer
+        priceUsdt:
+          type: number
+        durationDays:
+          type: integer
+        txHash:
+          type: string
+        walletSent:
+          type: string
+        status:
+          type: string
+        rejectReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        approvedAt:
+          type: ["string", "null"]
+      required: [id, tier, priceUsdt, durationDays, txHash, walletSent, status, createdAt]
+
+    VipPurchaseInput:
+      type: object
+      properties:
+        tier:
+          type: integer
+        txHash:
+          type: string
+        walletSent:
+          type: string
+      required: [tier, txHash, walletSent]
+
+    VipPurchaseSubmitResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        tier:
+          type: integer
+        priceUsdt:
+          type: number
+        status:
+          type: string
+        message:
+          type: string
+      required: [id, tier, priceUsdt, status, message]
+
+    WithdrawInfo:
+      type: object
+      properties:
+        coinsPerUsdt:
+          type: integer
+        minWithdrawalCoins:
+          type: integer
+        minWithdrawalUsdt:
+          type: number
+        networks:
+          type: array
+          items:
+            type: string
+      required: [coinsPerUsdt, minWithdrawalCoins, minWithdrawalUsdt, networks]
+
+    WithdrawInput:
+      type: object
+      properties:
+        coinsAmount:
+          type: integer
+        usdtWallet:
+          type: string
+        network:
+          type: string
+      required: [coinsAmount, usdtWallet, network]
+
+    Withdrawal:
+      type: object
+      properties:
+        id:
+          type: integer
+        coinsAmount:
+          type: integer
+        usdtAmount:
+          type: number
+        usdtWallet:
+          type: string
+        status:
+          type: string
+        txHash:
+          type: ["string", "null"]
+        rejectReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        processedAt:
+          type: ["string", "null"]
+      required: [id, coinsAmount, usdtAmount, usdtWallet, status, createdAt]
+
+    WithdrawalResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        coinsAmount:
+          type: integer
+        usdtAmount:
+          type: number
+        usdtWallet:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+      required: [id, coinsAmount, usdtAmount, usdtWallet, status, message]
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalCoinsInCirculation:
+          type: integer
+        pendingWithdrawals:
+          type: integer
+        pendingVipPurchases:
+          type: integer
+        totalWithdrawalsCompleted:
+          type: integer
+        activeUsers:
+          type: integer
+        bannedUsers:
+          type: integer
+        vipUsers:
+          type: integer
+      required: [totalUsers, totalCoinsInCirculation, pendingWithdrawals, pendingVipPurchases, totalWithdrawalsCompleted, activeUsers, bannedUsers, vipUsers]
+
+    AdminUsersPage:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [users, total, limit, offset]
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        isBanned:
+          type: boolean
+        isAdmin:
+          type: boolean
+        vipLevel:
+          type: integer
+
+    AdminWithdrawal:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        telegramId:
+          type: string
+        coinsAmount:
+          type: integer
+        usdtAmount:
+          type: number
+        usdtWallet:
+          type: string
+        network:
+          type: string
+        status:
+          type: string
+        txHash:
+          type: ["string", "null"]
+        rejectReason:
+          type: ["string", "null"]
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        processedAt:
+          type: ["string", "null"]
+      required: [id, userId, username, telegramId, coinsAmount, usdtAmount, usdtWallet, network, status, createdAt]
+
+    AdminApproveWithdrawalInput:
+      type: object
+      properties:
+        txHash:
+          type: string
+      required: [txHash]
+
+    AdminRejectInput:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    AdminActionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        id:
+          type: integer
+        status:
+          type: string
+      required: [success, id, status]
+
+    AdminVipPurchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        telegramId:
+          type: string
+        tier:
+          type: integer
+        priceUsdt:
+          type: number
+        durationDays:
+          type: integer
+        txHash:
+          type: string
+        walletSent:
+          type: string
+        tierName:
+          type: string
+        tierEmoji:
+          type: string
+        screenshotUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+        rejectReason:
+          type: ["string", "null"]
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        approvedAt:
+          type: ["string", "null"]
+      required: [id, userId, username, telegramId, tier, priceUsdt, durationDays, txHash, walletSent, status, createdAt]
+
+    AdPlacementStatus:
+      type: object
+      properties:
+        available:
+          type: boolean
+        cooldownSeconds:
+          type: ["integer", "null"]
+      required: [available]
+
+    AdsStatus:
+      type: object
+      properties:
+        energyAd:
+          $ref: "#/components/schemas/AdPlacementStatus"
+        bonusAd:
+          $ref: "#/components/schemas/AdPlacementStatus"
+        dailyDoubleAd:
+          $ref: "#/components/schemas/AdPlacementStatus"
+      required: [energyAd, bonusAd, dailyDoubleAd]
+
+    AdRewardResult:
+      type: object
+      properties:
+        reward:
+          $ref: "#/components/schemas/RewardItem"
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [reward, user]
+
+    AdPlacement:
+      type: string
+      enum: [energy, bonus, daily_double]
+
+    AdTicketRequest:
+      type: object
+      properties:
+        placement:
+          $ref: "#/components/schemas/AdPlacement"
+      required: [placement]
+
+    AdTicketResult:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+      required: [token, expiresAt]
+
+    AdClaimRequest:
+      type: object
+      properties:
+        token:
+          type: string
+      required: [token]
+
+    ReferralInfo:
+      type: object
+      properties:
+        referralCode:
+          type: ["string", "null"]
+        shareLink:
+          type: ["string", "null"]
+          description: Full t.me deep link, null until the bot username is configured
+        invitedCount:
+          type: integer
+        referralBonusCoinsEarned:
+          type: integer
+      required: [referralCode, shareLink, invitedCount, referralBonusCoinsEarned]
+
+    DepositWallet:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+        network:
+          type: string
+        minDepositUsdt:
+          type: number
+        contractAddress:
+          type: string
+      required: [walletAddress, network, minDepositUsdt, contractAddress]
+
+    DepositSubmitInput:
+      type: object
+      properties:
+        txHash:
+          type: string
+        amountUsdt:
+          type: number
+      required: [txHash, amountUsdt]
+
+    DepositItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        txHash:
+          type: string
+        amountUsdt:
+          type: number
+        status:
+          type: string
+        failReason:
+          type: ["string", "null"]
+        network:
+          type: string
+        confirmations:
+          type: ["integer", "null"]
+        verifiedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, txHash, amountUsdt, status, network, createdAt]
+
+    DepositResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        amountUsdt:
+          type: number
+        message:
+          type: string
+        usdtBalance:
+          type: number
+      required: [id, status, amountUsdt, message, usdtBalance]
+
+    AdminDeposit:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        username:
+          type: string
+        telegramId:
+          type: string
+        txHash:
+          type: string
+        amountUsdt:
+          type: number
+        status:
+          type: string
+        failReason:
+          type: ["string", "null"]
+        network:
+          type: string
+        confirmations:
+          type: ["integer", "null"]
+        verifiedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, userId, username, telegramId, txHash, amountUsdt, status, network, createdAt]
+
+    AdminDepositsPage:
+      type: object
+      properties:
+        deposits:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminDeposit"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [deposits, total, limit, offset]
