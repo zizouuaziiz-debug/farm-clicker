@@ -102,9 +102,12 @@ export default function GameManagement() {
   // ── Edit mode controls ──────────────────────────────────────────────────────
 
   const handleEdit = () => {
-    setDraft(JSON.parse(JSON.stringify(config)));
-    setEditing(true);
-  };
+  console.log("CONFIG:", config);
+  console.log("CROPS:", config?.crops);
+
+  setDraft(JSON.parse(JSON.stringify(config)));
+  setEditing(true);
+};
 
   const handleCancel = () => {
     setDraft(null);
