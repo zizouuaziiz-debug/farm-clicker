@@ -325,9 +325,15 @@ export default function GameManagement() {
                           onChange={(v) => updateCrop(crop.cropType, "xpReward", String(v))} className="w-20" />
                       </td>
                       <td className="px-4 py-2">
-                        <NumInput value={crop.coinsPerHarvest} min={0}
-                          onChange={(v) => updateCrop(crop.cropType, "coinsPerHarvest", String(v))} className="w-20" />
-                      </td>
+  {console.log("XP DEBUG:", crop.name, crop.xpReward, typeof crop.xpReward)}
+
+  <NumInput
+    value={crop.xpReward}
+    min={0}
+    onChange={(v) => updateCrop(crop.cropType, "xpReward", String(v))}
+    className="w-20"
+  />
+</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium ${crop.sellPrice - crop.buyCost > 0 ? "text-green-600" : "text-red-600"}`}>
                           {crop.sellPrice - crop.buyCost > 0 ? "+" : ""}{crop.sellPrice - crop.buyCost}
