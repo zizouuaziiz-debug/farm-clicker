@@ -62,15 +62,23 @@ function NumInput({
   className?: string;
 }) {
   return (
+  <>
+    <div style={{ color: "red", fontSize: 12 }}>
+      {String(value)}
+    </div>
+
     <input
       type="number"
       min={min}
       step={step}
       value={value}
-      onChange={(e) => onChange(step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value, 10))}
-      className={`w-full border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white ${className}`}
+      onChange={(e) =>
+        onChange(step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value, 10))
+      }
+      className={`w-full border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-900 bg-white ${className}`}
     />
-  );
+  </>
+);
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
