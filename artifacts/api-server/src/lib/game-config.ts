@@ -12,8 +12,7 @@ export interface CropConfig {
   quantity: number;
   witherGraceMs: number;
 }
-export type CropHarvestField =
-{
+export const CROPS: Record<string, CropConfig> = {
   "wheat": {
     "name": "Wheat",
     "emoji": "🌾",
