@@ -244,86 +244,310 @@ export default function Farm() {
     </div>
   );
 }
+function getCropStage(crop: string | undefined, progress: number) {
+  if (!crop) return "🌱";
 
+  if (progress < 25) return "🌰";
+  if (progress < 55) return "🌱";
+  if (progress < 90) return CROP_EMOJIS[crop] || "🌿";
+
+  return CROP_EMOJIS[crop] || "🌾";
+}
 function PlotCard({ plot, onClick }: { plot: FarmPlot; onClick: () => void }) {
+
+  const [smoothProgress, setSmoothProgress] = useState(
+    plot.growthPercent || 0
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSmoothProgress(prev => {
+        const target = plot.growthPercent || 0;
+
+        if (Math.abs(prev - target) < 0.5) {
+          return target;
+        }
+
+        return prev + (target - prev) * 0.08;
+      });
+    }, 50);
+
+    return () => clearInterval(timer);
+  }, [plot.growthPercent]);
+
+
   let secondsLeft = 0;
+
   if (plot.readyAt && plot.state === "growing") {
-    secondsLeft = Math.max(0, Math.floor((new Date(plot.readyAt).getTime() - Date.now()) / 1000));
+    secondsLeft = Math.max(
+      0,
+      Math.floor(
+        (new Date(plot.readyAt).getTime() - Date.now()) / 1000
+      )
+    );
   }
 
+
+  const progressOffset =
+    283 - (283 * smoothProgress / 100);
+
+
+
   const renderContent = () => {
+
     switch (plot.state) {
+
       case "empty":
-        return <div className="text-white/30"><Plus size={24} /></div>;
+        return (
+          <div className="text-white/40">
+            <Plus size={26}/>
+          </div>
+        );
+
+
       case "growing":
         return (
-          <div className="flex flex-col items-center justify-center">
-            <span className="text-3xl filter drop-shadow-md mb-1 animate-pulse">{CROP_EMOJIS[plot.cropType!] || "🌱"}</span>
-            <div className="bg-black/50 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-sm">
+          <div className="relative flex flex-col items-center justify-center w-full h-full">
+
+            <span
+              className="
+              text-4xl
+              z-10
+              animate-pulse
+              drop-shadow-[0_6px_5px_rgba(0,0,0,0.6)]
+              "
+            >
+              {getCropStage(
+                plot.cropType,
+                smoothProgress
+              )}
+            </span>
+
+
+            <div
+              className="
+              bg-black/60
+              text-white
+              text-[10px]
+              font-bold
+              px-2
+              py-1
+              rounded-full
+              z-10
+              "
+            >
               {formatTime(secondsLeft)}
             </div>
-            <svg className="absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] -rotate-90 pointer-events-none" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="6" />
+
+
+            <svg
+              className="
+              absolute
+              inset-2
+              w-[calc(100%-16px)]
+              h-[calc(100%-16px)]
+              -rotate-90
+              "
+              viewBox="0 0 100 100"
+            >
+
               <circle
-                cx="50" cy="50" r="45" fill="none" stroke="#4ade80" strokeWidth="6"
-                strokeDasharray="283"
-                strokeDashoffset={283 - (283 * (plot.growthPercent || 0) / 100)}
-                className="transition-all duration-1000"
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="rgba(255,255,255,.2)"
+                strokeWidth="7"
               />
+
+
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="#4ade80"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray="283"
+                strokeDashoffset={progressOffset}
+              />
+
             </svg>
+
           </div>
         );
+
+
       case "needs_water":
         return (
-          <div className="flex flex-col items-center justify-center">
-            <span className="text-3xl filter drop-shadow-md mb-1 opacity-80">{CROP_EMOJIS[plot.cropType!] || "🌱"}</span>
-            <div className="absolute -top-2 -right-2 bg-blue-500 rounded-full p-1 animate-bounce border-2 border-white shadow-sm z-10">
-              <Droplets size={16} className="text-white" />
+          <div className="relative">
+
+            <span
+              className="
+              text-4xl
+              opacity-80
+              drop-shadow-[0_5px_5px_rgba(0,0,0,.5)]
+              "
+            >
+              {getCropStage(
+                plot.cropType,
+                plot.growthPercent || 50
+              )}
+            </span>
+
+
+            <div
+              className="
+              absolute
+              -top-2
+              -right-2
+              bg-blue-500
+              rounded-full
+              p-1
+              animate-bounce
+              border-2
+              border-white
+              "
+            >
+              <Droplets size={16}/>
             </div>
+
           </div>
         );
+
+
       case "ready":
         return (
-          <div className="flex flex-col items-center justify-center">
-            <span className="text-4xl filter drop-shadow-lg animate-bounce">{CROP_EMOJIS[plot.cropType!] || "🌱"}</span>
-            <div className="absolute -top-1 -right-1 text-yellow-400 animate-spin">
-              <Sparkles size={20} fill="currentColor" />
-            </div>
-          </div>
+          <motion.div
+            animate={{ y:[0,-8,0] }}
+            transition={{
+              repeat:Infinity,
+              duration:1.2
+            }}
+            className="relative"
+          >
+
+            <span
+              className="
+              text-5xl
+              drop-shadow-[0_8px_6px_rgba(0,0,0,.6)]
+              "
+            >
+              {CROP_EMOJIS[plot.cropType!] || "🌾"}
+            </span>
+
+
+            <Sparkles
+              size={22}
+              fill="currentColor"
+              className="
+              absolute
+              -top-3
+              -right-3
+              text-yellow-300
+              animate-spin
+              "
+            />
+
+          </motion.div>
         );
+
+
       case "withered":
       case "dead":
         return (
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span className="text-2xl grayscale opacity-60">🥀</span>
-            <div className="flex items-center gap-0.5 bg-black/40 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-              <Trash2 size={9} /> Clear
-            </div>
+          <div className="flex flex-col items-center">
+
+            <span className="text-3xl grayscale opacity-60">
+              🥀
+            </span>
+
+            <span className="
+              bg-black/50
+              text-white
+              text-[10px]
+              px-2
+              py-1
+              rounded-full
+            ">
+              <Trash2 size={10} className="inline"/>
+              Clear
+            </span>
+
           </div>
         );
+
+
       default:
         return null;
     }
   };
 
-  const bgs: Record<string, string> = {
-    empty: "bg-[#7A5230]",
-    growing: "bg-[#654321]",
-    needs_water: "bg-[#8B6B4A]",
-    ready: "bg-[#4a3728] border-yellow-400 border-2",
-    withered: "bg-gray-700",
-    dead: "bg-gray-800",
-    planted: "bg-[#654321]"
+
+
+  const bgs: Record<string,string> = {
+
+    empty:
+      "bg-[#8b5a2b]",
+
+    growing:
+      "bg-[#654321]",
+
+    needs_water:
+      "bg-[#806044]",
+
+    ready:
+      "bg-[#4a3728] border-2 border-yellow-400",
+
+    withered:
+      "bg-gray-700",
+
+    dead:
+      "bg-gray-800",
+
+    planted:
+      "bg-[#654321]"
   };
 
+
   return (
+
     <motion.button
-      whileTap={{ scale: 0.9 }}
+
+      whileTap={{scale:.92}}
+
+      whileHover={{
+        scale:1.03,
+        y:-3
+      }}
+
       onClick={onClick}
-      className={`relative w-full h-full rounded-2xl flex items-center justify-center transition-colors shadow-inner overflow-hidden ${bgs[plot.state] || "bg-[#7A5230]"}`}
-      style={{ boxShadow: "inset 0 4px 6px -1px rgba(0,0,0,0.3), inset 0 2px 4px -1px rgba(0,0,0,0.06)" }}
+
+      className={`
+      relative
+      w-full
+      h-full
+      rounded-2xl
+      flex
+      items-center
+      justify-center
+      overflow-hidden
+      transition-all
+
+      ${bgs[plot.state] || bgs.empty}
+
+      shadow-[inset_0_-10px_15px_rgba(0,0,0,.35),
+      inset_0_5px_10px_rgba(255,255,255,.15),
+      0_8px_15px_rgba(0,0,0,.35)]
+
+      border
+      border-white/10
+      `}
     >
+
       {renderContent()}
+
     </motion.button>
   );
 }
