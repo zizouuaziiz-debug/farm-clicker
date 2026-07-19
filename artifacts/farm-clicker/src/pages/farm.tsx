@@ -226,7 +226,7 @@ export default function Farm() {
                           <GameButton
                             size="sm"
                             className="w-full text-xs py-1.5 h-auto"
-                            onClick={() => handlePlant(type)}
+                            onClick={() => !isBusy && handlePlant(type)}
                           >
                             Plant
                           </GameButton>
