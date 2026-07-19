@@ -12,97 +12,92 @@ export interface CropConfig {
   quantity: number;
   witherGraceMs: number;
 }
-export const CROPS: Record<string, CropConfig> = {
-  wheat: {
-    cropType: "wheat",
-    name: "Wheat",
-    emoji: "🌾",
-    buyCost: 10,
-    sellPrice: 15,
-    growTimeMs: 5 * 60 * 1000,
-    waterNeeded: 1,
-    requiredLevel: 1,
-    xpReward: 5,
-    coinsPerHarvest: 5,
-    quantity: 3,
-    witherGraceMs: 30 * 60 * 1000,
+{
+  "wheat": {
+    "name": "Wheat",
+    "emoji": "🌾",
+    "buyCost": 10,
+    "cropType": "wheat",
+    "quantity": 3,
+    "xpReward": 5,
+    "sellPrice": 6,
+    "growTimeMs": 300000,
+    "waterNeeded": 1,
+    "requiredLevel": 1,
+    "witherGraceMs": 1800000,
+    "coinsPerHarvest": 8
   },
-
-  sunflower: {
-    cropType: "sunflower",
-    name: "Sunflower",
-    emoji: "🌻",
-    buyCost: 20,
-    sellPrice: 28,
-    growTimeMs: 8 * 60 * 1000,
-    waterNeeded: 1,
-    requiredLevel: 2,
-    xpReward: 8,
-    coinsPerHarvest: 8,
-    quantity: 2,
-    witherGraceMs: 45 * 60 * 1000,
+  "sunflower": {
+    "name": "Sunflower",
+    "emoji": "🌻",
+    "buyCost": 20,
+    "cropType": "sunflower",
+    "quantity": 2,
+    "xpReward": 10,
+    "sellPrice": 18,
+    "growTimeMs": 480000,
+    "waterNeeded": 1,
+    "requiredLevel": 2,
+    "witherGraceMs": 2700000,
+    "coinsPerHarvest": 15
   },
-
-  tomato: {
-    cropType: "tomato",
-    name: "Tomato",
-    emoji: "🍅",
-    buyCost: 35,
-    sellPrice: 48,
-    growTimeMs: 15 * 60 * 1000,
-    waterNeeded: 2,
-    requiredLevel: 3,
-    xpReward: 12,
-    coinsPerHarvest: 12,
-    quantity: 2,
-    witherGraceMs: 60 * 60 * 1000,
+  "tomato": {
+    "name": "Tomato",
+    "emoji": "🍅",
+    "buyCost": 35,
+    "cropType": "tomato",
+    "quantity": 2,
+    "xpReward": 15,
+    "sellPrice": 30,
+    "growTimeMs": 900000,
+    "waterNeeded": 2,
+    "requiredLevel": 3,
+    "witherGraceMs": 3600000,
+    "coinsPerHarvest": 25
   },
-
-  carrot: {
-    cropType: "carrot",
-    name: "Carrot",
-    emoji: "🥕",
-    buyCost: 50,
-    sellPrice: 68,
-    growTimeMs: 22 * 60 * 1000,
-    waterNeeded: 2,
-    requiredLevel: 4,
-    xpReward: 18,
-    coinsPerHarvest: 18,
-    quantity: 3,
-    witherGraceMs: 90 * 60 * 1000,
+  "carrot": {
+    "name": "Carrot",
+    "emoji": "🥕",
+    "buyCost": 50,
+    "cropType": "carrot",
+    "quantity": 3,
+    "xpReward": 25,
+    "sellPrice": 45,
+    "growTimeMs": 1320000,
+    "waterNeeded": 2,
+    "requiredLevel": 4,
+    "witherGraceMs": 5400000,
+    "coinsPerHarvest": 35
   },
-
-  potato: {
-    cropType: "potato",
-    name: "Potato",
-    emoji: "🥔",
-    buyCost: 70,
-    sellPrice: 95,
-    growTimeMs: 30 * 60 * 1000,
-    waterNeeded: 3,
-    requiredLevel: 5,
-    xpReward: 24,
-    coinsPerHarvest: 24,
-    quantity: 4,
-    witherGraceMs: 2 * 60 * 60 * 1000,
+  "potato": {
+    "name": "Potato",
+    "emoji": "🥔",
+    "buyCost": 70,
+    "cropType": "potato",
+    "quantity": 4,
+    "xpReward": 35,
+    "sellPrice": 65,
+    "growTimeMs": 1800000,
+    "waterNeeded": 3,
+    "requiredLevel": 5,
+    "witherGraceMs": 7200000,
+    "coinsPerHarvest": 50
   },
-
-  corn: {
-    cropType: "corn",
-    name: "Corn",
-    emoji: "🌽",
-    buyCost: 100,
-    sellPrice: 135,
-    growTimeMs: 45 * 60 * 1000,
-    waterNeeded: 3,
-    requiredLevel: 6,
-    xpReward: 35,
-    coinsPerHarvest: 35,
-    quantity: 4,
-    witherGraceMs: 3 * 60 * 60 * 1000,
-  },
-};
+  "corn": {
+    "name": "Corn",
+    "emoji": "🌽",
+    "buyCost": 100,
+    "cropType": "corn",
+    "quantity": 4,
+    "xpReward": 50,
+    "sellPrice": 100,
+    "growTimeMs": 2700000,
+    "waterNeeded": 3,
+    "requiredLevel": 6,
+    "witherGraceMs": 10800000,
+    "coinsPerHarvest": 80
+  }
+}
 
 export type CropHarvestField =
   | "cropsHarvestedWheat"
