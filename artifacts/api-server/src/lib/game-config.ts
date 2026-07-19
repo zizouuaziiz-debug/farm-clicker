@@ -97,7 +97,7 @@ export const CROPS: Record<string, CropConfig> = {
     "witherGraceMs": 10800000,
     "coinsPerHarvest": 80
   }
-}
+};
 
 export type CropHarvestField =
   | "cropsHarvestedWheat"
