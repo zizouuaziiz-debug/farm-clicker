@@ -368,9 +368,9 @@ router.post("/harvest-all", requireAuth, async (req, res) => {
     const crop = store.crops[plot.cropType!];
     if (!crop) continue;
     const xpGain = Math.floor(crop.xpReward * (user.vipLevel > 0 ? (user.vipLevel === 1 ? 1.5 : user.vipLevel === 2 ? 2 : 3) : 1));
-    totalCoins += crop.coinsPerHarvest;
+    
     totalXp += xpGain;
-    newCoins += crop.coinsPerHarvest;
+    
     newXp += xpGain;
   }
 
@@ -404,7 +404,7 @@ router.post("/harvest-all", requireAuth, async (req, res) => {
         xp: newXp,
         level: newLevel,
         totalHarvests: user.totalHarvests + readyPlots.length,
-        totalCoinsEarned: user.totalCoinsEarned + totalCoins,
+        totalCoinsEarned: user.totalCoinsEarned,
         totalXpEarned: user.totalXpEarned + totalXp,
       })
       .where(eq(usersTable.id, user.id));
