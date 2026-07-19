@@ -236,7 +236,7 @@ router.post("/harvest/:plotId", requireAuth, async (req, res) => {
   }
 
   const xpGain = Math.floor(crop.xpReward * (user.vipLevel > 0 ? (user.vipLevel === 1 ? 1.5 : user.vipLevel === 2 ? 2 : 3) : 1));
-  const coinsGain = crop.coinsPerHarvest;
+  const coinsGain = 0;
   const newXp = user.xp + xpGain;
   const newCoins = user.coins + coinsGain;
   const newLevel = getLevelForXp(newXp);
@@ -263,10 +263,10 @@ router.post("/harvest/:plotId", requireAuth, async (req, res) => {
       .update(usersTable)
       .set({
         xp: newXp,
-        coins: newCoins,
+        coins: user.coins,
         level: newLevel,
         totalHarvests: user.totalHarvests + 1,
-        totalCoinsEarned: user.totalCoinsEarned + coinsGain,
+        totalCoinsEarned: user.totalCoinsEarned,
         totalXpEarned: user.totalXpEarned + xpGain,
         [cropField]: user[cropField] + crop.quantity,
       })
