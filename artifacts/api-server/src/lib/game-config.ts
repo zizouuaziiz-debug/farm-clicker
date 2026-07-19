@@ -12,6 +12,7 @@ export interface CropConfig {
   quantity: number;
   witherGraceMs: number;
 }
+export type CropHarvestField =
 {
   "wheat": {
     "name": "Wheat",
