@@ -156,7 +156,7 @@ export default function Farm() {
         <GameButton
           variant="primary"
           size="sm"
-          disabled={!hasReady || harvestAll.isPending}
+          disabled={!hasReady || isBusy}
           onClick={handleHarvestAll}
         >
           <Sparkles size={16} /> Harvest All
