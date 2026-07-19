@@ -63,6 +63,7 @@ export default function Farm() {
   }, []);
 
   const handlePlotClick = (plot: FarmPlot) => {
+    if (isBusy) return;
     if (plot.state === "empty") {
       setSelectedSlot(plot.slot);
     } else if (plot.state === "ready") {
@@ -147,7 +148,7 @@ export default function Farm() {
         <GameButton
           variant="secondary"
           size="sm"
-          disabled={!hasThirsty || waterAll.isPending}
+          disabled={!hasThirsty || isBusy}
           onClick={handleWaterAll}
         >
           <Droplets size={16} /> Water All
