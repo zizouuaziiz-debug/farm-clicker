@@ -9,13 +9,13 @@ const router = Router();
 
 router.get("/", requireAuth, async (req, res) => {
   const { limit } = parsePagination(req, { defaultLimit: 50, maxLimit: 100 });
-  // Select only the columns the leaderboard actually renders, instead of the
-  // full user row, to cut payload size and DB→server transfer.
+
   const users = await db
     .select({
       id: usersTable.id,
       username: usersTable.username,
       firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
       photoUrl: usersTable.photoUrl,
       coins: usersTable.coins,
       level: usersTable.level,
@@ -33,6 +33,7 @@ router.get("/", requireAuth, async (req, res) => {
       userId: u.id,
       username: u.username,
       firstName: u.firstName,
+      lastName: u.lastName,
       photoUrl: u.photoUrl,
       coins: u.coins,
       level: u.level,
