@@ -133,7 +133,11 @@ export default function Users() {
                 {users.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{u.username}</div>
+                      <div className="font-medium text-gray-900">
+  {u.firstName || u.lastName
+    ? `${u.firstName || ""} ${u.lastName || ""}`.trim()
+    : u.username || `User ${u.telegramId}`}
+</div>
                       <div className="text-xs text-gray-400">TG: {u.telegramId}</div>
                     </td>
                     <td className="px-4 py-3">
