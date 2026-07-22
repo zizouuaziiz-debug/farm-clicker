@@ -10,3 +10,5 @@ export * from "./admin_logs";
 export * from "./ad_tickets";
 export * from "./game_config";
 export * from "./deposits";
+export * from "./broadcasts";
+export * from "./broadcast_sent";
