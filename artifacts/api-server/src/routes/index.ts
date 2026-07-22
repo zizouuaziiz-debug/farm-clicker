@@ -20,6 +20,7 @@ import adminAuthRouter from "./admin-auth.js";
 import adsRouter from "./ads.js";
 import referralsRouter from "./referrals.js";
 import depositsRouter from "./deposits.js";
+import broadcastsRouter from "./broadcasts.js";
 
 const router = Router();
 
@@ -51,5 +52,6 @@ router.use("/referrals", referralsRouter);
 // ── Admin ─────────────────────────────────────────────────────────────────────
 router.use("/admin-auth", adminAuthLimiter, adminAuthRouter);
 router.use("/admin", adminRouter);
+router.use("/admin/broadcasts", broadcastsRouter);
 
 export default router;
