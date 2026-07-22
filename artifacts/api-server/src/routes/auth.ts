@@ -88,7 +88,7 @@ router.post("/telegram", validateBody(telegramSchema), async (req, res) => {
             lastName: tgUser.last_name || null,
             photoUrl: tgUser.photo_url || null,
             referredById: referrer ? referrer.id : null,
-            coins: referrer ? 200 + REFERRAL_SIGNUP_BONUS_COINS : 200,
+            coins: referrer ? 100 + REFERRAL_SIGNUP_BONUS_COINS : 100,
           })
           .returning();
 
