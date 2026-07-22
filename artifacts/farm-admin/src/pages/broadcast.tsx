@@ -1,43 +1,61 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchAdmin } from "@/lib/admin-auth";
 import { toast } from "sonner";
+import { formatDate } from "@/lib/utils";
+
+interface Broadcast {
+  id: number;
+  message: string;
+  status: string;
+  totalUsers: number;
+  successCount: number;
+  failedCount: number;
+  createdAt: string;
+}
 
 export default function Broadcast() {
 
   const [message, setMessage] = useState("");
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(false);
-  const [broadcasts, setBroadcasts] = useState<any[]>([]);
 
 
-  async function createBroadcast(){
+  async function loadBroadcasts() {
+    try {
+      const data = await fetchAdmin("/api/admin/broadcasts");
+      setBroadcasts(data);
+    } catch {
+      toast.error("Failed to load broadcasts");
+    }
+  }
 
-    if(!message.trim()){
-      toast.error("Message required");
+
+  useEffect(() => {
+    loadBroadcasts();
+  }, []);
+
+
+
+  async function createBroadcast() {
+
+    if (!message.trim()) {
+      toast.error("Message is empty");
       return;
     }
 
+
     setLoading(true);
 
-    try{
+    try {
 
-      const token = localStorage.getItem("admin_token");
-
-      const res = await fetch("/api/admin/broadcasts",{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":`Bearer ${token}`
-        },
-        body:JSON.stringify({
+      await fetchAdmin("/api/admin/broadcasts", {
+        method: "POST",
+        body: JSON.stringify({
           message,
-          parseMode:"HTML",
-          target:"all"
-        })
+          parseMode: "HTML",
+          target: "all",
+        }),
       });
-
-
-      if(!res.ok){
-        throw new Error("Failed");
-      }
 
 
       toast.success("Broadcast created");
@@ -47,11 +65,13 @@ export default function Broadcast() {
       loadBroadcasts();
 
 
-    }catch(e){
+    } catch (err) {
 
-      toast.error("Error creating broadcast");
+      toast.error(
+        err instanceof Error ? err.message : "Failed"
+      );
 
-    }finally{
+    } finally {
 
       setLoading(false);
 
@@ -61,84 +81,102 @@ export default function Broadcast() {
 
 
 
-  async function loadBroadcasts(){
-
-    try{
-
-      const token = localStorage.getItem("admin_token");
-
-      const res = await fetch("/api/admin/broadcasts",{
-        headers:{
-          "Authorization":`Bearer ${token}`
-        }
-      });
-
-
-      const data = await res.json();
-
-      setBroadcasts(data);
-
-    }catch(e){}
-
-  }
-
-
   return (
     <div className="p-6">
 
-      <h1 className="text-2xl font-bold mb-6">
-        📢 Broadcast Messages
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+
+        <h1 className="text-2xl font-bold text-gray-900">
+          📢 Broadcast
+        </h1>
+
+      </div>
 
 
-      <div className="bg-white rounded-xl p-5 shadow mb-6">
+
+      <div className="bg-white rounded-2xl border p-5 mb-6">
 
         <textarea
-          className="w-full border rounded-lg p-3 h-32"
-          placeholder="Write message..."
           value={message}
           onChange={(e)=>setMessage(e.target.value)}
+          placeholder="Write message for users..."
+          className="w-full h-32 border rounded-xl p-3 text-sm"
         />
 
 
         <button
           onClick={createBroadcast}
           disabled={loading}
-          className="mt-4 bg-green-600 text-white px-5 py-2 rounded-lg"
+          className="mt-4 px-5 py-2.5 bg-green-600 text-white rounded-xl"
         >
-          {loading ? "Creating..." : "Send Broadcast"}
+
+          {loading ? "Creating..." : "Create Broadcast"}
+
         </button>
 
       </div>
 
 
 
-      <div className="bg-white rounded-xl p-5">
 
-        <h2 className="font-bold mb-4">
+      <div className="bg-white rounded-2xl border overflow-hidden">
+
+        <div className="p-4 border-b font-semibold">
           History
-        </h2>
+        </div>
 
 
-        {broadcasts.map((b)=>(
-          <div
-            key={b.id}
-            className="border-b py-3"
-          >
+        <table className="w-full text-sm">
 
-            <div>
-              {b.message}
-            </div>
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="text-left p-3">Message</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Success</th>
+              <th>Failed</th>
+              <th>Date</th>
+            </tr>
+          </thead>
 
-            <div className="text-sm text-gray-500">
-              {b.status} |
-              Success: {b.successCount}
-              {" "}
-              Failed: {b.failedCount}
-            </div>
 
-          </div>
-        ))}
+          <tbody>
+
+          {broadcasts.map((b)=>(
+
+            <tr key={b.id} className="border-t">
+
+              <td className="p-3 max-w-xs truncate">
+                {b.message}
+              </td>
+
+              <td>
+                {b.status}
+              </td>
+
+              <td>
+                {b.totalUsers}
+              </td>
+
+              <td className="text-green-600">
+                {b.successCount}
+              </td>
+
+              <td className="text-red-600">
+                {b.failedCount}
+              </td>
+
+              <td>
+                {formatDate(b.createdAt)}
+              </td>
+
+            </tr>
+
+          ))}
+
+          </tbody>
+
+        </table>
 
 
       </div>
