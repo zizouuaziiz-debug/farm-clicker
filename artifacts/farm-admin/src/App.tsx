@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 import { initAdminAuth, getAdminToken, clearAdminToken } from "@/lib/admin-auth";
 import { Loader2 } from "lucide-react";
 
-// Lazy-load admin pages — they're heavy (tables, charts, forms)
+// Lazy-load admin pages
 const Login = lazy(() => import("@/pages/login"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Users = lazy(() => import("@/pages/users"));
@@ -14,6 +14,7 @@ const VipPurchases = lazy(() => import("@/pages/vip-purchases"));
 const Deposits = lazy(() => import("@/pages/deposits"));
 const GameManagement = lazy(() => import("@/pages/game-management"));
 const Logs = lazy(() => import("@/pages/logs"));
+const Broadcast = lazy(() => import("@/pages/broadcast"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 initAdminAuth();
@@ -35,26 +36,37 @@ const NAV_ITEMS = [
   { path: "/withdrawals", label: "Withdrawals", emoji: "💸", exact: false },
   { path: "/vip-purchases", label: "VIP Requests", emoji: "💎", exact: false },
   { path: "/deposits", label: "Deposits", emoji: "💰", exact: false },
+  { path: "/broadcast", label: "Broadcast", emoji: "📢", exact: false },
   { path: "/game-management", label: "Game Economy", emoji: "🎮", exact: false },
   { path: "/logs", label: "Logs", emoji: "📋", exact: false },
 ];
 
 function Sidebar({ onLogout }: { onLogout: () => void }) {
   const [location, navigate] = useLocation();
+
   return (
     <aside className="w-56 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">
       <div className="p-5 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🌾</span>
           <div>
-            <div className="font-bold text-gray-900 text-sm">Farm Admin</div>
-            <div className="text-xs text-gray-400">Management Panel</div>
+            <div className="font-bold text-gray-900 text-sm">
+              Farm Admin
+            </div>
+            <div className="text-xs text-gray-400">
+              Management Panel
+            </div>
           </div>
         </div>
       </div>
+
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
-          const isActive = item.exact ? location === "/" : location.startsWith(item.path);
+          const isActive =
+            item.exact
+              ? location === item.path
+              : location.startsWith(item.path);
+
           return (
             <button
               key={item.path}
@@ -71,12 +83,14 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
           );
         })}
       </nav>
+
       <div className="p-3 border-t border-gray-100">
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
         >
-          <span>🚪</span> Sign Out
+          <span>🚪</span>
+          Sign Out
         </button>
       </div>
     </aside>
@@ -95,6 +109,7 @@ function AdminLayout({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar onLogout={onLogout} />
+
       <main className="flex-1 overflow-auto">
         <Suspense fallback={<PageLoader />}>
           <Switch>
@@ -103,6 +118,7 @@ function AdminLayout({ onLogout }: { onLogout: () => void }) {
             <Route path="/withdrawals" component={Withdrawals} />
             <Route path="/vip-purchases" component={VipPurchases} />
             <Route path="/deposits" component={Deposits} />
+            <Route path="/broadcast" component={Broadcast} />
             <Route path="/game-management" component={GameManagement} />
             <Route path="/logs" component={Logs} />
             <Route component={NotFound} />
@@ -138,6 +154,7 @@ function App() {
           </Suspense>
         )}
       </WouterRouter>
+
       <Toaster position="top-right" />
     </QueryClientProvider>
   );
