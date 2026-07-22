@@ -67,7 +67,11 @@ export default function Leaderboard() {
                 {entry.photoUrl ? (
                   <img src={entry.photoUrl} alt="avatar" className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  (entry.firstName?.charAt(0) || entry.username.charAt(0)).toUpperCase()
+                  (
+  entry.firstName?.charAt(0) ||
+  entry.username?.charAt(0) ||
+  "U"
+).toUpperCase()
                 )}
               </div>
 
@@ -75,8 +79,10 @@ export default function Leaderboard() {
               <div className="flex-1 overflow-hidden">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h3 className="font-display font-bold truncate text-[15px]">
-                    {entry.username}
-                  </h3>
+  {entry.firstName || entry.lastName
+    ? `${entry.firstName || ""} ${entry.lastName || ""}`.trim()
+    : entry.username || `User ${entry.userId}`}
+</h3>
                   {vipBadge && (
                     <span className="text-sm" title={`VIP ${entry.vipLevel}`}>{vipBadge}</span>
                   )}
