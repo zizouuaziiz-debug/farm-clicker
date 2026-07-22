@@ -69,6 +69,7 @@ export default function Leaderboard() {
                 ) : (
                   (
   entry.firstName?.charAt(0) ||
+         entry.lastName?.charAt(0) ||           
   entry.username?.charAt(0) ||
   "U"
 ).toUpperCase()
