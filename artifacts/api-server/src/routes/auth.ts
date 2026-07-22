@@ -46,8 +46,7 @@ router.post("/telegram", validateBody(telegramSchema), async (req, res) => {
 
     const tgUser = parsed.user;
     const telegramId = String(tgUser.id);
-    const username = tgUser.username || `user${tgUser.id}`;
-
+    const username = tgUser.username || null;
     let existingUser: typeof usersTable.$inferSelect | undefined;
 
     try {
