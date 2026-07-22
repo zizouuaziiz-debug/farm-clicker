@@ -27,16 +27,16 @@ const router = Router();
 // ── Public / utility ────────────────────────────────────────────────────────
 router.use("/healthz", healthzRouter);
 
-// ── Auth  (tight rate limit) ─────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────────
 router.use("/auth", authLimiter, authRouter);
 
-// ── Player endpoints ─────────────────────────────────────────────────────────
+// ── Player endpoints ────────────────────────────────────────────────────────
 router.use("/user", userRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/leaderboard", leaderboardRouter);
 router.use("/stats", statsRouter);
 
-// ── Game actions  (write limiter on POST/PATCH) ───────────────────────────────
+// ── Game actions ────────────────────────────────────────────────────────────
 router.use("/farm", writeLimiter, farmRouter);
 router.use("/shop", writeLimiter, shopRouter);
 router.use("/inventory", inventoryRouter);
@@ -49,9 +49,12 @@ router.use("/deposits", depositsRouter);
 router.use("/ads", writeLimiter, adsRouter);
 router.use("/referrals", referralsRouter);
 
-// ── Admin ─────────────────────────────────────────────────────────────────────
+// ── Admin ───────────────────────────────────────────────────────────────────
 router.use("/admin-auth", adminAuthLimiter, adminAuthRouter);
+
 router.use("/admin", adminRouter);
+
+// Broadcast management
 router.use("/admin/broadcasts", broadcastsRouter);
 
 export default router;
